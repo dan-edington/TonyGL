@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { devFoldersPlugin } from './dev/listDirs.js';
 
 export default defineConfig((configEnv) => {
-  const isDev = configEnv.command === 'serve';
+  const isDev = configEnv.command === 'serve' && !process.env.VITEST;
 
   return {
     root: isDev ? resolve(__dirname, 'dev') : undefined,

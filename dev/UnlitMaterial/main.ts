@@ -3,7 +3,7 @@ import { sphere } from 'primitive-geometry';
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 
-import { Geometry, Mesh, Renderer, Scene, PerspectiveCamera, OrbitControls, UnlitMaterial } from '../../src/index';
+import { TonyGL } from '../../src';
 
 const container = document.getElementById('app');
 
@@ -11,24 +11,19 @@ const pane = new Pane();
 pane.registerPlugin(EssentialsPlugin);
 
 if (container) {
-  // Create and init the renderer
-  const renderer = await Renderer.create({ containerElement: container, alpha: true });
-
-  // Create a scene
-  const scene = new Scene();
+  const tony = await TonyGL({ containerElement: container, alpha: true });
+  const scene = tony.createScene();
   scene.setClearColor([0.25, 0.25, 0.25, 1]);
 
-  // Create a camera
-  const camera = new PerspectiveCamera({
+  const camera = tony.createPerspectiveCamera({
     near: 0.1,
     far: 100,
     fov: (60 * Math.PI) / 180,
     aspect: container.clientWidth / container.clientHeight,
   });
 
-  // Create cube geometry
   const spherePrimitive = sphere({ radius: 1, nx: 32, ny: 32 });
-  const sphereGeometry = new Geometry({
+  const sphereGeometry = tony.createGeometry({
     vertices: spherePrimitive.positions,
     indices: Uint16Array.from(spherePrimitive.cells),
     normals: spherePrimitive.normals,
@@ -39,7 +34,7 @@ if (container) {
     color: { r: 1, g: 0, b: 0, a: 1 },
   };
 
-  const unlitMaterial = new UnlitMaterial({
+  const unlitMaterial = tony.createUnlitMaterial({
     transparent: true,
     color: [
       unlitMaterialParams.color.r,
@@ -49,24 +44,21 @@ if (container) {
     ],
   });
 
-  const sphereMesh = new Mesh(sphereGeometry, unlitMaterial);
+  const sphereMesh = tony.createMesh(sphereGeometry, unlitMaterial);
 
-  // Add objects to scene
   scene.add([sphereMesh]);
 
-  camera.position = [0, 0, 5];
-  camera.lookAt(new Float32Array([0, 0, 0]));
-  new OrbitControls({ camera, domElement: renderer.surfaceManager.canvasElement });
+  camera.setPosition([0, 0, 5]);
+  camera.lookAt([0, 0, 0]);
+  tony.createOrbitControls({ camera, domElement: tony.renderer.canvasElement });
 
-  // Render the scene
   function render() {
-    renderer.render(scene, camera);
+    tony.render(scene, camera);
     requestAnimationFrame(render);
   }
 
   render();
 
-  // Add resize handler for camera
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
   });
@@ -76,7 +68,6 @@ if (container) {
 
   unlitMaterialFolder.addBinding(unlitMaterialParams, 'color', { color: { type: 'float' } }).on('change', () => {
     const value = unlitMaterialParams.color;
-    const newColor = [value.r, value.g, value.b, value.a];
-    unlitMaterial.color = newColor;
+    unlitMaterial.setColor([value.r, value.g, value.b, value.a]);
   });
 }

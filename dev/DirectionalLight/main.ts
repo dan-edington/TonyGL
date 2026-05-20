@@ -3,16 +3,7 @@ import { sphere } from 'primitive-geometry';
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 
-import {
-  Geometry,
-  Mesh,
-  Renderer,
-  Scene,
-  PerspectiveCamera,
-  OrbitControls,
-  LambertMaterial,
-  DirectionalLight,
-} from '../../src/index';
+import { TonyGL } from '../../src';
 
 const container = document.getElementById('app');
 
@@ -20,24 +11,19 @@ const pane = new Pane();
 pane.registerPlugin(EssentialsPlugin);
 
 if (container) {
-  // Create and init the renderer
-  const renderer = await Renderer.create({ containerElement: container, alpha: true });
-
-  // Create a scene
-  const scene = new Scene();
+  const tony = await TonyGL({ containerElement: container, alpha: true });
+  const scene = tony.createScene();
   scene.setClearColor([0.25, 0.25, 0.25, 1]);
 
-  // Create a camera
-  const camera = new PerspectiveCamera({
+  const camera = tony.createPerspectiveCamera({
     near: 0.1,
     far: 100,
     fov: (60 * Math.PI) / 180,
     aspect: container.clientWidth / container.clientHeight,
   });
 
-  // Create cube geometry
   const spherePrimitive = sphere({ radius: 1, nx: 32, ny: 32 });
-  const sphereGeometry = new Geometry({
+  const sphereGeometry = tony.createGeometry({
     vertices: spherePrimitive.positions,
     indices: Uint16Array.from(spherePrimitive.cells),
     normals: spherePrimitive.normals,
@@ -62,9 +48,14 @@ if (container) {
     intensity: 0,
   };
 
-  const directionalLight = new DirectionalLight({ direction: [lightParams.x, lightParams.y, lightParams.z] });
+  const directionalLight = tony.createDirectionalLight({
+    direction: [lightParams.x, lightParams.y, lightParams.z],
+    color: [lightParams.color.r, lightParams.color.g, lightParams.color.b, lightParams.color.a],
+    intensity: lightParams.intensity,
+  });
+  directionalLight.visible = lightParams.visible;
 
-  const lambertMaterial = new LambertMaterial({
+  const lambertMaterial = tony.createLambertMaterial({
     transparent: true,
     color: [
       lambertMaterialParams.color.r,
@@ -74,9 +65,8 @@ if (container) {
     ],
   });
 
-  const sphereMesh = new Mesh(sphereGeometry, lambertMaterial);
+  const sphereMesh = tony.createMesh(sphereGeometry, lambertMaterial);
 
-  // Add objects to scene
   scene.add([sphereMesh, directionalLight]);
   scene.setAmbientLightColor([
     ambientParams.color.r,
@@ -86,19 +76,17 @@ if (container) {
   ]);
   scene.setAmbientLightIntensity(ambientParams.intensity);
 
-  camera.position = [0, 0, 5];
-  camera.lookAt(new Float32Array([0, 0, 0]));
-  new OrbitControls({ camera, domElement: renderer.surfaceManager.canvasElement });
+  camera.setPosition([0, 0, 5]);
+  camera.lookAt([0, 0, 0]);
+  tony.createOrbitControls({ camera, domElement: tony.renderer.canvasElement });
 
-  // Render the scene
   function render() {
-    renderer.render(scene, camera);
+    tony.render(scene, camera);
     requestAnimationFrame(render);
   }
 
   render();
 
-  // Add resize handler for camera
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
   });
@@ -108,29 +96,28 @@ if (container) {
 
   lambertMaterialFolder.addBinding(lambertMaterialParams, 'color', { color: { type: 'float' } }).on('change', () => {
     const value = lambertMaterialParams.color;
-    const newColor = [value.r, value.g, value.b, value.a];
-    lambertMaterial.color = newColor;
+    lambertMaterial.setColor([value.r, value.g, value.b, value.a]);
   });
 
   const lightFolder = paneApi.addFolder ? paneApi.addFolder({ title: 'Light' }) : paneApi;
 
   lightFolder.addBinding(lightParams, 'color', { color: { type: 'float' } }).on('change', () => {
     const value = lightParams.color;
-    directionalLight.color = [value.r, value.g, value.b, value.a];
+    directionalLight.setColor([value.r, value.g, value.b, value.a]);
   });
 
   lightFolder.addBinding(lightParams, 'intensity', { min: 0, max: 30, step: 0.01 }).on('change', () => {
-    directionalLight.intensity = lightParams.intensity;
+    directionalLight.setIntensity(lightParams.intensity);
   });
 
   lightFolder.addBinding(lightParams, 'x', { min: -10, max: 10, step: 0.01 }).on('change', () => {
-    directionalLight.direction = [lightParams.x, lightParams.y, lightParams.z];
+    directionalLight.setDirection([lightParams.x, lightParams.y, lightParams.z]);
   });
   lightFolder.addBinding(lightParams, 'y', { min: -10, max: 10, step: 0.01 }).on('change', () => {
-    directionalLight.direction = [lightParams.x, lightParams.y, lightParams.z];
+    directionalLight.setDirection([lightParams.x, lightParams.y, lightParams.z]);
   });
   lightFolder.addBinding(lightParams, 'z', { min: -10, max: 10, step: 0.01 }).on('change', () => {
-    directionalLight.direction = [lightParams.x, lightParams.y, lightParams.z];
+    directionalLight.setDirection([lightParams.x, lightParams.y, lightParams.z]);
   });
 
   lightFolder.addBinding(lightParams, 'visible').on('change', () => {

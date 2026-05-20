@@ -1,55 +1,47 @@
 import '../style.css';
 import { sphere } from 'primitive-geometry';
 
-import { Geometry, Mesh, Renderer, Scene, PerspectiveCamera, OrbitControls, NormalMaterial } from '../../src/index';
+import { TonyGL } from '../../src';
 
 const container = document.getElementById('app');
 
 if (container) {
-  // Create and init the renderer
-  const renderer = await Renderer.create({ containerElement: container, alpha: true });
-
-  // Create a scene
-  const scene = new Scene();
+  const tony = await TonyGL({ containerElement: container, alpha: true });
+  const scene = tony.createScene();
   scene.setClearColor([0.25, 0.25, 0.25, 1]);
 
-  // Create a camera
-  const camera = new PerspectiveCamera({
+  const camera = tony.createPerspectiveCamera({
     near: 0.1,
     far: 100,
     fov: (60 * Math.PI) / 180,
     aspect: container.clientWidth / container.clientHeight,
   });
 
-  // Create cube geometry
   const spherePrimitive = sphere({ radius: 1, nx: 32, ny: 32 });
-  const sphereGeometry = new Geometry({
+  const sphereGeometry = tony.createGeometry({
     vertices: spherePrimitive.positions,
     indices: Uint16Array.from(spherePrimitive.cells),
     normals: spherePrimitive.normals,
     uvs: spherePrimitive.uvs,
   });
 
-  const normalMaterial = new NormalMaterial();
+  const normalMaterial = tony.createNormalMaterial();
 
-  const sphereMesh = new Mesh(sphereGeometry, normalMaterial);
+  const sphereMesh = tony.createMesh(sphereGeometry, normalMaterial);
 
-  // Add objects to scene
   scene.add([sphereMesh]);
 
-  camera.position = [0, 0, 5];
-  camera.lookAt(new Float32Array([0, 0, 0]));
-  new OrbitControls({ camera, domElement: renderer.surfaceManager.canvasElement });
+  camera.setPosition([0, 0, 5]);
+  camera.lookAt([0, 0, 0]);
+  tony.createOrbitControls({ camera, domElement: tony.renderer.canvasElement });
 
-  // Render the scene
   function render() {
-    renderer.render(scene, camera);
+    tony.render(scene, camera);
     requestAnimationFrame(render);
   }
 
   render();
 
-  // Add resize handler for camera
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
   });

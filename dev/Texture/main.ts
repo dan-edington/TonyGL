@@ -3,17 +3,8 @@ import { sphere } from 'primitive-geometry';
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 
-import {
-  Geometry,
-  Mesh,
-  Renderer,
-  Scene,
-  PerspectiveCamera,
-  OrbitControls,
-  LambertMaterial,
-  PointLight,
-  Texture,
-} from '../../src/index';
+import { TonyGL } from '../../src';
+import { TextureFactory, type TextureColorSpace } from '../../src/texture/Texture';
 
 const container = document.getElementById('app');
 
@@ -21,34 +12,33 @@ const pane = new Pane();
 pane.registerPlugin(EssentialsPlugin);
 
 if (container) {
-  // Create and init the renderer
-  const renderer = await Renderer.create({ containerElement: container, alpha: true });
+  const tony = await TonyGL({ containerElement: container, alpha: true });
+  const textureFactory = TextureFactory();
 
-  // Create a scene
-  const scene = new Scene();
+  const scene = tony.createScene();
   scene.setClearColor([0.25, 0.25, 0.25, 1]);
 
-  // Create a camera
-  const camera = new PerspectiveCamera({
+  const camera = tony.createPerspectiveCamera({
     near: 0.1,
     far: 100,
     fov: (60 * Math.PI) / 180,
     aspect: container.clientWidth / container.clientHeight,
   });
 
-  // Create sphere geometry
   const spherePrimitive = sphere({ radius: 1, nx: 32, ny: 32 });
-  const sphereGeometry = new Geometry({
-    vertices: spherePrimitive.positions,
-    indices: Uint16Array.from(spherePrimitive.cells),
-    normals: spherePrimitive.normals,
-    uvs: spherePrimitive.uvs,
-  });
+  function createSphereGeometry() {
+    return tony.createGeometry({
+      vertices: spherePrimitive.positions,
+      indices: Uint16Array.from(spherePrimitive.cells),
+      normals: spherePrimitive.normals,
+      uvs: spherePrimitive.uvs,
+    });
+  }
 
-  async function loadTexture(url: string, colorSpace: 'srgb' | 'linear' | 'data' = 'srgb') {
+  async function loadTexture(url: string, colorSpace: TextureColorSpace = 'srgb') {
     const response = await fetch(url);
     const imageBitmap = await createImageBitmap(await response.blob());
-    return Texture.fromImageBitmap(imageBitmap, renderer.device, colorSpace);
+    return textureFactory.fromImageBitmap(imageBitmap, tony.renderer.device, colorSpace);
   }
 
   const albedoTexture = await loadTexture('/albedo.png');
@@ -82,25 +72,35 @@ if (container) {
     intensity: 0,
   };
 
-  const lambertMaterial = new LambertMaterial({
-    transparent: true,
-    color: [materialParams.color.r, materialParams.color.g, materialParams.color.b, materialParams.color.a],
-    albedoTexture,
-    alphaTexture: null,
-    normalTexture,
-  });
+  function createLambertMaterial() {
+    return tony.createLambertMaterial({
+      transparent: true,
+      color: [materialParams.color.r, materialParams.color.g, materialParams.color.b, materialParams.color.a],
+      albedoTexture: materialParams.useAlbedoMap ? albedoTexture : tony.renderer.textureLibrary.getFallback('white'),
+      alphaTexture: materialParams.useAlphaMap ? alphaTexture : tony.renderer.textureLibrary.getFallback('white'),
+      normalTexture: materialParams.useNormalMap ? normalTexture : tony.renderer.textureLibrary.getFallback('normal'),
+    });
+  }
 
-  const pointLight = new PointLight({
-    color: new Float32Array([lightParams.color.r, lightParams.color.g, lightParams.color.b, lightParams.color.a]),
+  let lambertMaterial = createLambertMaterial();
+
+  const pointLight = tony.createPointLight({
+    color: [lightParams.color.r, lightParams.color.g, lightParams.color.b, lightParams.color.a],
     intensity: lightParams.intensity,
     range: 30,
   });
-  pointLight.position = [lightParams.x, lightParams.y, lightParams.z];
+  pointLight.setPosition([lightParams.x, lightParams.y, lightParams.z]);
   pointLight.visible = lightParams.visible;
 
-  const sphereMesh = new Mesh(sphereGeometry, lambertMaterial);
+  let sphereMesh = tony.createMesh(createSphereGeometry(), lambertMaterial);
 
-  // Add objects to scene
+  function rebuildSphereMesh() {
+    scene.remove(sphereMesh);
+    lambertMaterial = createLambertMaterial();
+    sphereMesh = tony.createMesh(createSphereGeometry(), lambertMaterial);
+    scene.add(sphereMesh);
+  }
+
   scene.add([sphereMesh, pointLight]);
   scene.setAmbientLightColor([
     ambientParams.color.r,
@@ -110,19 +110,17 @@ if (container) {
   ]);
   scene.setAmbientLightIntensity(ambientParams.intensity);
 
-  camera.position = [0, 0, 5];
-  camera.lookAt(new Float32Array([0, 0, 0]));
-  new OrbitControls({ camera, domElement: renderer.surfaceManager.canvasElement });
+  camera.setPosition([0, 0, 5]);
+  camera.lookAt([0, 0, 0]);
+  tony.createOrbitControls({ camera, domElement: tony.renderer.canvasElement });
 
-  // Render the scene
   function render() {
-    renderer.render(scene, camera);
+    tony.render(scene, camera);
     requestAnimationFrame(render);
   }
 
   render();
 
-  // Add resize handler for camera
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
   });
@@ -132,7 +130,7 @@ if (container) {
 
   textureMaterialFolder.addBinding(materialParams, 'color', { color: { type: 'float' } }).on('change', () => {
     const value = materialParams.color;
-    lambertMaterial.color = [value.r, value.g, value.b, value.a];
+    lambertMaterial.setColor([value.r, value.g, value.b, value.a]);
   });
 
   // Albedo texture folder
@@ -140,17 +138,19 @@ if (container) {
     ? textureMaterialFolder.addFolder({ title: 'Albedo Map' })
     : textureMaterialFolder;
   albedoFolder.addBinding(materialParams, 'useAlbedoMap', { label: 'Enabled' }).on('change', () => {
-    lambertMaterial.albedoTexture = materialParams.useAlbedoMap ? albedoTexture : null;
+    rebuildSphereMesh();
   });
   albedoFolder
     .addBinding(materialParams, 'albedoRepeatU', { label: 'RepeatU', min: 0.1, max: 10, step: 0.1 })
     .on('change', () => {
       albedoTexture.repeat = new Float32Array([materialParams.albedoRepeatU, albedoTexture.repeat[1]]);
+      lambertMaterial.updateUniforms({ textureRepeatAlbedo: albedoTexture.repeat });
     });
   albedoFolder
     .addBinding(materialParams, 'albedoRepeatV', { label: 'RepeatV', min: 0.1, max: 10, step: 0.1 })
     .on('change', () => {
       albedoTexture.repeat = new Float32Array([albedoTexture.repeat[0], materialParams.albedoRepeatV]);
+      lambertMaterial.updateUniforms({ textureRepeatAlbedo: albedoTexture.repeat });
     });
 
   // Alpha texture folder
@@ -158,17 +158,19 @@ if (container) {
     ? textureMaterialFolder.addFolder({ title: 'Alpha Map' })
     : textureMaterialFolder;
   alphaFolder.addBinding(materialParams, 'useAlphaMap', { label: 'Enabled' }).on('change', () => {
-    lambertMaterial.alphaTexture = materialParams.useAlphaMap ? alphaTexture : null;
+    rebuildSphereMesh();
   });
   alphaFolder
     .addBinding(materialParams, 'alphaRepeatU', { label: 'RepeatU', min: 0.1, max: 10, step: 0.1 })
     .on('change', () => {
       alphaTexture.repeat = new Float32Array([materialParams.alphaRepeatU, alphaTexture.repeat[1]]);
+      lambertMaterial.updateUniforms({ textureRepeatAlpha: alphaTexture.repeat });
     });
   alphaFolder
     .addBinding(materialParams, 'alphaRepeatV', { label: 'RepeatV', min: 0.1, max: 10, step: 0.1 })
     .on('change', () => {
       alphaTexture.repeat = new Float32Array([alphaTexture.repeat[0], materialParams.alphaRepeatV]);
+      lambertMaterial.updateUniforms({ textureRepeatAlpha: alphaTexture.repeat });
     });
 
   // Normal texture folder
@@ -176,38 +178,40 @@ if (container) {
     ? textureMaterialFolder.addFolder({ title: 'Normal Map' })
     : textureMaterialFolder;
   normalFolder.addBinding(materialParams, 'useNormalMap', { label: 'Enabled' }).on('change', () => {
-    lambertMaterial.normalTexture = materialParams.useNormalMap ? normalTexture : null;
+    rebuildSphereMesh();
   });
   normalFolder
     .addBinding(materialParams, 'normalRepeatU', { label: 'RepeatU', min: 0.1, max: 10, step: 0.1 })
     .on('change', () => {
       normalTexture.repeat = new Float32Array([materialParams.normalRepeatU, normalTexture.repeat[1]]);
+      lambertMaterial.updateUniforms({ textureRepeatNormal: normalTexture.repeat });
     });
   normalFolder
     .addBinding(materialParams, 'normalRepeatV', { label: 'RepeatV', min: 0.1, max: 10, step: 0.1 })
     .on('change', () => {
       normalTexture.repeat = new Float32Array([normalTexture.repeat[0], materialParams.normalRepeatV]);
+      lambertMaterial.updateUniforms({ textureRepeatNormal: normalTexture.repeat });
     });
 
   const lightFolder = paneApi.addFolder ? paneApi.addFolder({ title: 'Light' }) : paneApi;
 
   lightFolder.addBinding(lightParams, 'color', { color: { type: 'float' } }).on('change', () => {
     const value = lightParams.color;
-    pointLight.color = [value.r, value.g, value.b, value.a];
+    pointLight.setColor([value.r, value.g, value.b, value.a]);
   });
 
   lightFolder.addBinding(lightParams, 'intensity', { min: 0, max: 30, step: 0.01 }).on('change', () => {
-    pointLight.intensity = lightParams.intensity;
+    pointLight.setIntensity(lightParams.intensity);
   });
 
   lightFolder.addBinding(lightParams, 'x', { min: -10, max: 10, step: 0.01 }).on('change', () => {
-    pointLight.position = [lightParams.x, lightParams.y, lightParams.z];
+    pointLight.setPosition([lightParams.x, lightParams.y, lightParams.z]);
   });
   lightFolder.addBinding(lightParams, 'y', { min: -10, max: 10, step: 0.01 }).on('change', () => {
-    pointLight.position = [lightParams.x, lightParams.y, lightParams.z];
+    pointLight.setPosition([lightParams.x, lightParams.y, lightParams.z]);
   });
   lightFolder.addBinding(lightParams, 'z', { min: -10, max: 10, step: 0.01 }).on('change', () => {
-    pointLight.position = [lightParams.x, lightParams.y, lightParams.z];
+    pointLight.setPosition([lightParams.x, lightParams.y, lightParams.z]);
   });
 
   lightFolder.addBinding(lightParams, 'visible').on('change', () => {
