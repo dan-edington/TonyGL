@@ -3,17 +3,15 @@ import type { CreateLightBaseFunction, Light, LightFactoryFunction, LightOptions
 import type { EntityFactoryFunction } from '../core/core.types';
 
 function LightFactory(entityFactory: EntityFactoryFunction): LightFactoryFunction {
-  const createLightBase: CreateLightBaseFunction = (
+  const createLightBase: CreateLightBaseFunction = <T extends Light = Light>(
     type: string,
     options: LightOptions = {},
     flags: LightFlag = LightFlag.None,
-  ) => {
-    const { entity } = entityFactory({
+  ): T => {
+    const { entity: light } = entityFactory<T>({
       ...options,
       type,
     });
-
-    const light = entity as Light;
 
     light.isLight = true;
     light.flags = flags;
@@ -36,13 +34,13 @@ function LightFactory(entityFactory: EntityFactoryFunction): LightFactoryFunctio
     return light;
   };
 
-  const createLight = ((options: LightOptions = {}) => {
+  const createLight = (options: LightOptions = {}): Light => {
     return createLightBase('Light', options);
-  }) as LightFactoryFunction;
+  };
 
-  createLight.createLightBase = createLightBase;
-
-  return createLight;
+  return Object.assign(createLight, {
+    createLightBase,
+  });
 }
 
 export { LightFactory };

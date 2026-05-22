@@ -44,6 +44,10 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
     return (light.flags & LightFlag.SpotLight) !== 0 && light.type === 'SpotLight';
   }
 
+  function isLightEntity(entity: Entity): entity is Light {
+    return entity.isLight && typeof (entity as Partial<Light>).setColor === 'function';
+  }
+
   function gatherLightingData() {
     const maxLights = constants.MAX_LIGHTS;
     const positions = new Float32Array(maxLights * 4);
@@ -96,8 +100,8 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
     lights = [];
 
     const traverse = (entity: Entity) => {
-      if (entity.isLight) {
-        lights.push(entity as unknown as Light);
+      if (isLightEntity(entity)) {
+        lights.push(entity);
       }
 
       entity.children.forEach((child) => {

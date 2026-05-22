@@ -1,6 +1,7 @@
 import { mat4, quat, vec3 } from 'wgpu-matrix';
 import type {
   Entity,
+  EntityFactoryFunction,
   EntityOptions,
   EntityWithSubscription,
   EntitySubscriptionCallback,
@@ -8,7 +9,9 @@ import type {
   uuid,
 } from './core.types';
 
-function EntityFactory(options: EntityOptions): EntityWithSubscription {
+const EntityFactory: EntityFactoryFunction = <T extends Entity = Entity>(
+  options: EntityOptions,
+): EntityWithSubscription<T> => {
   const id: uuid = crypto.randomUUID();
   const type: string = options.type;
   const children: Entity[] = [];
@@ -173,7 +176,7 @@ function EntityFactory(options: EntityOptions): EntityWithSubscription {
   // Ensure matrices are valid for first render.
   updateMatrix();
 
-  return { entity: self, subscribe } as EntityWithSubscription;
-}
+  return { entity: self as T, subscribe };
+};
 
 export { EntityFactory };

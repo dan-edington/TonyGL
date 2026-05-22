@@ -11,11 +11,11 @@ function DirectionalLightFactory(entityFactory: EntityFactoryFunction) {
   const createLight = LightFactory(entityFactory);
 
   return function createDirectionalLight(options: DirectionalLightOptions = {}): DirectionalLight {
-    const directionalLight = createLight.createLightBase(
+    const directionalLight = createLight.createLightBase<DirectionalLight>(
       'DirectionalLight',
       options,
       LightFlag.DirectionalLight,
-    ) as DirectionalLight;
+    );
 
     directionalLight.direction = new Float32Array(options.direction ?? [0, 1, 0]);
     directionalLight.setDirection = (value: ArrayLike<number>) => {

@@ -15,7 +15,7 @@ function CustomMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
   const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
 
   function createCustomMaterial(options: CustomMaterialOptions): CustomMaterial {
-    const customMaterial = createBaseMaterial({
+    const customMaterial = createBaseMaterial<CustomMaterial>({
       type: 'custom',
       shader: options.shader,
       transparent: options.transparent ?? false,

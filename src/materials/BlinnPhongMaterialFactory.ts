@@ -48,7 +48,7 @@ function BlinnPhongMaterialFactory(renderer: Renderer, createUniformBuffer: Crea
       throw new Error('BlinnPhong material sampler not found.');
     }
 
-    const blinnPhongMaterial = createBaseMaterial({
+    const blinnPhongMaterial = createBaseMaterial<BlinnPhongMaterial>({
       type: 'blinnphong',
       shader: 'blinnphong',
       transparent: options.transparent ?? false,
@@ -74,7 +74,7 @@ function BlinnPhongMaterialFactory(renderer: Renderer, createUniformBuffer: Crea
           { binding: 4, resource: sampler },
         ];
       },
-    }) as BlinnPhongMaterial;
+    });
 
     blinnPhongMaterial.color = color;
     blinnPhongMaterial.setColor = (value: ArrayLike<number>) => {

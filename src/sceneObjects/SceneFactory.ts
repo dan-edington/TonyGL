@@ -19,7 +19,7 @@ function SceneFactory(
   createUniformBuffer: CreateUniformBufferFunction,
 ) {
   return function createScene(options: SceneOptions = {}): Scene {
-    const { entity, subscribe } = entityFactory({ ...options, type: 'Scene' });
+    const { entity, subscribe } = entityFactory<Scene>({ ...options, type: 'Scene' });
 
     const sceneUniformsBuffer = createUniformBuffer({
       _padding: { type: 'u32', value: 0 },
@@ -96,7 +96,7 @@ function SceneFactory(
     }
 
     function updateLights() {
-      lightManager.updateLights(scene as unknown as any);
+      lightManager.updateLights(scene);
     }
 
     const scene: Scene = {

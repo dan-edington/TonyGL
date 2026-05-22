@@ -12,12 +12,12 @@ export type EntityOptions = {
   visible?: boolean;
 };
 
-export type EntityWithSubscription = {
-  entity: Entity;
+export type EntityWithSubscription<T extends Entity = Entity> = {
+  entity: T;
   subscribe: (subscriptionEvent: EntitySubscriptionEvent, subscriptionCallback: EntitySubscriptionCallback) => void;
 };
 
-export type EntityFactoryFunction = (options: EntityOptions) => EntityWithSubscription;
+export type EntityFactoryFunction = <T extends Entity = Entity>(options: EntityOptions) => EntityWithSubscription<T>;
 
 export type EntitySubscriptionEvent =
   | 'onTransformChanged'

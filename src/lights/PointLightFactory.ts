@@ -9,7 +9,7 @@ function PointLightFactory(entityFactory: EntityFactoryFunction) {
   const createLight = LightFactory(entityFactory);
 
   return function createPointLight(options: PointLightOptions = {}): PointLight {
-    return createLight.createLightBase('PointLight', options, LightFlag.PointLight) as PointLight;
+    return createLight.createLightBase<PointLight>('PointLight', options, LightFlag.PointLight);
   };
 }
 

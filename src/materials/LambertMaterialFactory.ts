@@ -39,7 +39,7 @@ function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateU
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Lambert material sampler not found.');
 
-    const lambertMaterial = createBaseMaterial({
+    const lambertMaterial = createBaseMaterial<LambertMaterial>({
       type: 'lambert',
       shader: 'lambert',
       transparent: options.transparent ?? false,
@@ -62,7 +62,7 @@ function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateU
           { binding: 4, resource: sampler },
         ];
       },
-    }) as LambertMaterial;
+    });
 
     lambertMaterial.color = color;
     lambertMaterial.setColor = (value: ArrayLike<number>) => {

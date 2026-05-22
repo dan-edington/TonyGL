@@ -20,7 +20,7 @@ export type BaseMaterialOptions = {
 };
 
 export function BaseMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUniformBufferFunction) {
-  function createBaseMaterial(options: BaseMaterialOptions): BaseMaterial {
+  function createBaseMaterial<T extends BaseMaterial = BaseMaterial>(options: BaseMaterialOptions): T {
     const id = crypto.randomUUID();
     const type = options.type;
     const materialUniformsBuffer = options.uniforms ? createUniformBuffer(options.uniforms) : null;
@@ -69,7 +69,7 @@ export function BaseMaterialFactory(renderer: Renderer, createUniformBuffer: Cre
       },
     };
 
-    return material;
+    return material as T;
   }
 
   return { createBaseMaterial };

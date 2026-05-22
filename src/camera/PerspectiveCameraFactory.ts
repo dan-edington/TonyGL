@@ -16,7 +16,7 @@ function PerspectiveCameraFactory(
   createUniformBuffer: CreateUniformBufferFunction,
 ) {
   return function createPerspectiveCamera(options?: PerspectiveCameraOptions): PerspectiveCamera {
-    const { entity, subscribe } = entityFactory({
+    const { entity, subscribe } = entityFactory<PerspectiveCamera>({
       ...options,
       type: 'PerspectiveCamera',
     });
@@ -84,7 +84,7 @@ function PerspectiveCameraFactory(
       cameraUniformsBuffer.destroy();
     }
 
-    const camera = Object.assign(entity, {
+    const camera: PerspectiveCamera = Object.assign(entity, {
       projectionMatrix,
       viewMatrix,
       viewProjectionMatrix,
@@ -94,7 +94,7 @@ function PerspectiveCameraFactory(
       updateProjectionMatrix,
       updateCameraUniforms,
       destroy,
-    }) as PerspectiveCamera;
+    });
 
     subscribe('onTransformChanged', syncViewProjectionFromEntityMatrix);
 

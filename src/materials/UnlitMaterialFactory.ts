@@ -38,7 +38,7 @@ function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUni
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Unlit material sampler not found.');
 
-    const material = createBaseMaterial({
+    const material = createBaseMaterial<UnlitMaterial>({
       type: 'unlit',
       shader: 'unlit',
       transparent: options.transparent ?? false,
@@ -59,7 +59,7 @@ function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUni
           { binding: 3, resource: sampler },
         ];
       },
-    }) as UnlitMaterial;
+    });
 
     material.color = color;
     material.setColor = (value: ArrayLike<number>) => {

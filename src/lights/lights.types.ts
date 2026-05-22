@@ -33,7 +33,11 @@ export type SpotLight = DirectionalLight & {
   setPenumbra(value: number): void;
 };
 
-export type CreateLightBaseFunction = (type: string, options?: LightOptions, flags?: LightFlag) => Light;
+export type CreateLightBaseFunction = <T extends Light = Light>(
+  type: string,
+  options?: LightOptions,
+  flags?: LightFlag,
+) => T;
 
 export type LightFactoryFunction = ((options?: LightOptions) => Light) & {
   createLightBase: CreateLightBaseFunction;

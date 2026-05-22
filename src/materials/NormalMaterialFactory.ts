@@ -19,14 +19,20 @@ function NormalMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Normal material sampler not found.');
 
-    const normalMaterial = createBaseMaterial({
+    let materialFlags = MaterialFlags.None;
+
+    if (options.normalTexture) {
+      materialFlags |= MaterialFlags.Normal;
+    }
+
+    const normalMaterial = createBaseMaterial<NormalMaterial>({
       type: 'normal',
       shader: 'normal',
       transparent: false,
       doubleSided: options.doubleSided ?? false,
       depthWrite: options.depthWrite ?? true,
       uniforms: {
-        materialFlags: { type: 'u32', value: MaterialFlags.None },
+        materialFlags: { type: 'u32', value: materialFlags },
       },
       buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
         if (!materialUniformsBuffer?.buffer) return [];

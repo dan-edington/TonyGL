@@ -14,7 +14,7 @@ function MeshFactory(
   createUniformBuffer: CreateUniformBufferFunction,
 ) {
   return function createMesh(geometry: Geometry, material: BaseMaterial, options?: MeshOptions): Mesh {
-    const { entity } = entityFactory({
+    const { entity } = entityFactory<Mesh>({
       ...options,
       type: 'Mesh',
     });

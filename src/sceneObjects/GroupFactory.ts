@@ -5,7 +5,7 @@ export type GroupOptions = Omit<EntityOptions, 'type'>;
 
 function GroupFactory(entityFactory: EntityFactoryFunction) {
   return function createGroup(options: GroupOptions = {}): Group {
-    const { entity } = entityFactory({ ...options, type: 'Group' });
+    const { entity } = entityFactory<Group>({ ...options, type: 'Group' });
     return entity;
   };
 }

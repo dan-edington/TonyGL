@@ -9,7 +9,7 @@ function createEntity(
   name: string,
   options?: { visible?: boolean; drawable?: boolean },
 ): Entity & { destroy: () => void } {
-  const { entity } = EntityFactory({
+  const { entity } = EntityFactory<Entity>({
     type: 'TestEntity',
     name,
     visible: options?.visible ?? true,
