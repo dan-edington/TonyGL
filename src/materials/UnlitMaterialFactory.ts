@@ -38,7 +38,7 @@ function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUni
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Unlit material sampler not found.');
 
-    const material = createBaseMaterial<UnlitMaterial>({
+    const self = createBaseMaterial<UnlitMaterial>({
       type: 'unlit',
       shader: 'unlit',
       transparent: options.transparent ?? false,
@@ -54,21 +54,21 @@ function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUni
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },
-          { binding: 1, resource: alphaTexture.getView() },
-          { binding: 2, resource: albedoTexture.getView() },
+          { binding: 1, resource: alphaTexture.gpuTextureView },
+          { binding: 2, resource: albedoTexture.gpuTextureView },
           { binding: 3, resource: sampler },
         ];
       },
     });
 
-    material.color = color;
-    material.setColor = (value: ArrayLike<number>) => {
-      material.color = new Float32Array(value);
-      material.updateUniforms({ color: colorToLinear(material.color) });
-      material.usesAlphaPipeline = material.transparent || material.color[3] < 1;
+    self.color = color;
+    self.setColor = (value: ArrayLike<number>) => {
+      self.color = new Float32Array(value);
+      self.updateUniforms({ color: colorToLinear(self.color) });
+      self.usesAlphaPipeline = self.transparent || self.color[3] < 1;
     };
 
-    return material;
+    return self;
   }
 
   return { createUnlitMaterial };

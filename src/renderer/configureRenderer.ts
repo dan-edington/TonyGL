@@ -78,28 +78,20 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer> {
     timers,
   } as Renderer;
 
-  const activePipelineManager = PipelineManagerFactory(renderer);
-  const createPassManager = PassManagerFactory(renderer);
-  const passManager = createPassManager();
-
-  const samplerLibrary = SamplerLibraryFactory(renderer);
-  const textureLibrary = TextureLibraryFactory(renderer);
-  const shaderLibrary = ShaderLibraryFactory(renderer);
-
-  renderer.pipelineManager = activePipelineManager;
-  renderer.passManager = passManager;
+  renderer.samplerLibrary = SamplerLibraryFactory(renderer);
+  renderer.textureLibrary = TextureLibraryFactory(renderer);
+  renderer.shaderLibrary = ShaderLibraryFactory(renderer);
+  renderer.pipelineManager = PipelineManagerFactory(renderer);
+  renderer.passManager = PassManagerFactory(renderer);
   renderer.passOrder = ['render', 'postprocessing'];
-  renderer.samplerLibrary = samplerLibrary;
-  renderer.textureLibrary = textureLibrary;
-  renderer.shaderLibrary = shaderLibrary;
 
-  const postProcessingShader = shaderLibrary.getShader('postprocessing');
+  const postProcessingShader = renderer.shaderLibrary.getShader('postprocessing');
   if (!postProcessingShader) throw new Error(errorMessages.missingShaderCode);
 
-  const linearClampSampler = samplerLibrary.getSampler('linearClamp');
+  const linearClampSampler = renderer.samplerLibrary.getSampler('linearClamp');
   if (!linearClampSampler) throw new Error(errorMessages.missingSamplerLibraryDevice);
 
-  passManager.registerPass(
+  renderer.passManager.registerPass(
     'render',
     (passOptions) =>
       createRenderPass({
@@ -115,7 +107,7 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer> {
     },
   );
 
-  passManager.registerPass(
+  renderer.passManager.registerPass(
     'postprocessing',
     (passOptions) =>
       createPostProcessingPass({

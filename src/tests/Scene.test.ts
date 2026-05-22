@@ -16,9 +16,7 @@ function createEntity(
   });
 
   if (options?.drawable) {
-    Object.assign(entity, {
-      draw() {},
-    });
+    (entity as Entity & { draw(): void }).draw = () => {};
   }
 
   return entity;

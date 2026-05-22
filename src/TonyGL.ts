@@ -19,6 +19,7 @@ import { CustomMaterialFactory, CustomMaterialOptions } from './materials/Custom
 import { MeshFactory, MeshOptions } from './sceneObjects/MeshFactory';
 import { initialiseFrameTimers } from './renderer/frameTimers';
 import { GroupFactory, GroupOptions } from './sceneObjects/GroupFactory';
+import { CreateTextureFromDataOptions, TextureFactory } from './texture/Texture';
 import type { Renderer } from './renderer/renderer.types';
 import type { Group, Mesh, Scene } from './sceneObjects/sceneObjects.types';
 import type { OrbitControls, PerspectiveCamera } from './camera/camera.types';
@@ -26,6 +27,7 @@ import type { DirectionalLight, PointLight, SpotLight } from './lights/lights.ty
 import type { Geometry } from './geometry/geometry.types';
 import type { BlinnPhongMaterial, CustomMaterial, LambertMaterial } from './materials/materials.types';
 import type { UniformBuffer, UniformBufferOptions, UniformObject } from './core/core.types';
+import type { Texture } from './texture/texture.types';
 
 export type TonyOptions = {
   containerElement?: HTMLElement;
@@ -57,6 +59,7 @@ export type Tony = {
   createNormalMaterial: (options?: NormalMaterialOptions) => NormalMaterial;
   createCustomMaterial: (options: CustomMaterialOptions) => CustomMaterial;
   createUniformBuffer: (uniformObject: UniformObject, options?: UniformBufferOptions) => UniformBuffer;
+  createTextureFromData: (options: CreateTextureFromDataOptions) => Texture;
   render: (scene: Scene, camera: PerspectiveCamera) => void;
   destroy: () => void;
 };
@@ -81,6 +84,7 @@ async function TonyGL(options: TonyOptions): Promise<Tony> {
   const createPerspectiveCamera = PerspectiveCameraFactory(renderer, entityFactory, createUniformBuffer);
   const createGeometry = GeometryFactory(renderer);
   const createMesh = MeshFactory(renderer, entityFactory, createUniformBuffer);
+  const createTextureFromData = TextureFactory(renderer);
   const { createBlinnPhongMaterial } = BlinnPhongMaterialFactory(renderer, createUniformBuffer);
   const { createLambertMaterial } = LambertMaterialFactory(renderer, createUniformBuffer);
   const { createNormalMaterial } = NormalMaterialFactory(renderer, createUniformBuffer);
@@ -132,6 +136,7 @@ async function TonyGL(options: TonyOptions): Promise<Tony> {
     createNormalMaterial,
     createCustomMaterial,
     createUniformBuffer,
+    createTextureFromData,
     render,
     destroy,
   };

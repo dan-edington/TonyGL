@@ -14,10 +14,17 @@ function OrbitControlsFactory(options: OrbitControlsOptions): OrbitControls {
   const target = new Float32Array(options.target ?? [0, 0, 0]);
   const rotationSpeed = options.rotationSpeed ?? 0.005;
 
-  let isDragging = false;
   let radius = 0;
   const currentRotation = new Float32Array([0, 0]);
   const abortController = new AbortController();
+
+  const self: OrbitControls = {
+    camera,
+    domElement,
+    target,
+    isDragging: false,
+    destroy,
+  };
 
   function updateCurrentRadiusAndRotation() {
     const cameraToTargetVector = vec3.sub(camera.position, target);
@@ -27,7 +34,7 @@ function OrbitControlsFactory(options: OrbitControlsOptions): OrbitControls {
   }
 
   function handleDrag(event: PointerEvent) {
-    if (!isDragging) {
+    if (!self.isDragging) {
       domElement.removeEventListener('pointermove', handleDrag);
       return;
     }
@@ -48,13 +55,13 @@ function OrbitControlsFactory(options: OrbitControlsOptions): OrbitControls {
   }
 
   function handleDragStart() {
-    isDragging = true;
+    self.isDragging = true;
     updateCurrentRadiusAndRotation();
     domElement.addEventListener('pointermove', handleDrag, { signal: abortController.signal });
   }
 
   function handleDragEnd() {
-    isDragging = false;
+    self.isDragging = false;
   }
 
   domElement.addEventListener('pointerdown', handleDragStart, { signal: abortController.signal });
@@ -65,15 +72,7 @@ function OrbitControlsFactory(options: OrbitControlsOptions): OrbitControls {
     abortController.abort();
   }
 
-  return {
-    camera,
-    domElement,
-    target,
-    get isDragging() {
-      return isDragging;
-    },
-    destroy,
-  };
+  return self;
 }
 
 export { OrbitControlsFactory };

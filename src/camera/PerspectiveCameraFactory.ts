@@ -16,7 +16,7 @@ function PerspectiveCameraFactory(
   createUniformBuffer: CreateUniformBufferFunction,
 ) {
   return function createPerspectiveCamera(options?: PerspectiveCameraOptions): PerspectiveCamera {
-    const { entity, subscribe } = entityFactory<PerspectiveCamera>({
+    const { entity: self, subscribe } = entityFactory<PerspectiveCamera>({
       ...options,
       type: 'PerspectiveCamera',
     });
@@ -27,12 +27,12 @@ function PerspectiveCameraFactory(
     let aspect = options?.aspect ?? 1;
 
     const projectionMatrix = mat4.perspective<Float32Array>(fov, aspect, near, far);
-    const viewMatrix = mat4.inverse(entity.matrix);
+    const viewMatrix = mat4.inverse(self.matrix);
     const viewProjectionMatrix = mat4.multiply(projectionMatrix, viewMatrix);
 
     const cameraUniformsBuffer = createUniformBuffer({
       viewProjectionMatrix: { type: 'mat4x4<f32>', value: viewProjectionMatrix },
-      worldPosition: { type: 'vec3<f32>', value: entity.position },
+      worldPosition: { type: 'vec3<f32>', value: self.position },
     });
 
     const cameraUniformsBindGroup = renderer.device.createBindGroup({
@@ -43,19 +43,19 @@ function PerspectiveCameraFactory(
     let bufferNeedsUpdate = false;
 
     function syncViewProjectionFromEntityMatrix() {
-      mat4.inverse(entity.matrix, viewMatrix);
+      mat4.inverse(self.matrix, viewMatrix);
       mat4.multiply(projectionMatrix, viewMatrix, viewProjectionMatrix);
       bufferNeedsUpdate = true;
     }
 
     function lookAt(target: ArrayLike<number>, up: ArrayLike<number> = [0, 1, 0]) {
-      mat4.lookAt(entity.position, target, up, viewMatrix);
-      mat4.inverse(viewMatrix, entity.matrix);
+      mat4.lookAt(self.position, target, up, viewMatrix);
+      mat4.inverse(viewMatrix, self.matrix);
 
-      if (entity.parent) {
-        mat4.multiply(entity.parent.matrixWorld, entity.matrix, entity.matrixWorld);
+      if (self.parent) {
+        mat4.multiply(self.parent.matrixWorld, self.matrix, self.matrixWorld);
       } else {
-        mat4.copy(entity.matrix, entity.matrixWorld);
+        mat4.copy(self.matrix, self.matrixWorld);
       }
 
       mat4.multiply(projectionMatrix, viewMatrix, viewProjectionMatrix);
@@ -73,7 +73,7 @@ function PerspectiveCameraFactory(
 
       cameraUniformsBuffer.updateUniforms({
         viewProjectionMatrix,
-        worldPosition: entity.position,
+        worldPosition: self.position,
       });
 
       cameraUniformsBuffer.writeUpdatedBufferData();
@@ -84,21 +84,19 @@ function PerspectiveCameraFactory(
       cameraUniformsBuffer.destroy();
     }
 
-    const camera: PerspectiveCamera = Object.assign(entity, {
-      projectionMatrix,
-      viewMatrix,
-      viewProjectionMatrix,
-      cameraUniformsBuffer,
-      cameraUniformsBindGroup,
-      lookAt,
-      updateProjectionMatrix,
-      updateCameraUniforms,
-      destroy,
-    });
+    self.projectionMatrix = projectionMatrix;
+    self.viewMatrix = viewMatrix;
+    self.viewProjectionMatrix = viewProjectionMatrix;
+    self.cameraUniformsBuffer = cameraUniformsBuffer;
+    self.cameraUniformsBindGroup = cameraUniformsBindGroup;
+    self.lookAt = lookAt;
+    self.updateProjectionMatrix = updateProjectionMatrix;
+    self.updateCameraUniforms = updateCameraUniforms;
+    self.destroy = destroy;
 
     subscribe('onTransformChanged', syncViewProjectionFromEntityMatrix);
 
-    Object.defineProperties(camera, {
+    Object.defineProperties(self, {
       near: {
         enumerable: true,
         configurable: true,
@@ -149,7 +147,7 @@ function PerspectiveCameraFactory(
       },
     });
 
-    return camera;
+    return self;
   };
 }
 

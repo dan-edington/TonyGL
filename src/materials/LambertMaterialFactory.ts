@@ -39,7 +39,7 @@ function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateU
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Lambert material sampler not found.');
 
-    const lambertMaterial = createBaseMaterial<LambertMaterial>({
+    const self = createBaseMaterial<LambertMaterial>({
       type: 'lambert',
       shader: 'lambert',
       transparent: options.transparent ?? false,
@@ -56,21 +56,21 @@ function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateU
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },
-          { binding: 1, resource: alphaTexture.getView() },
-          { binding: 2, resource: normalTexture.getView() },
-          { binding: 3, resource: albedoTexture.getView() },
+          { binding: 1, resource: alphaTexture.gpuTextureView },
+          { binding: 2, resource: normalTexture.gpuTextureView },
+          { binding: 3, resource: albedoTexture.gpuTextureView },
           { binding: 4, resource: sampler },
         ];
       },
     });
 
-    lambertMaterial.color = color;
-    lambertMaterial.setColor = (value: ArrayLike<number>) => {
-      lambertMaterial.color = new Float32Array(value);
-      lambertMaterial.updateUniforms({ color: colorToLinear(lambertMaterial.color) });
+    self.color = color;
+    self.setColor = (value: ArrayLike<number>) => {
+      self.color = new Float32Array(value);
+      self.updateUniforms({ color: colorToLinear(self.color) });
     };
 
-    return lambertMaterial;
+    return self;
   }
 
   return { createLambertMaterial };

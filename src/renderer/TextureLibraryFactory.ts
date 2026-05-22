@@ -12,14 +12,14 @@ export type TextureLibrary = {
 };
 
 function TextureLibraryFactory(renderer: Renderer): TextureLibrary {
-  const TextureLib = TextureFactory();
+  const createTextureFromData = TextureFactory(renderer);
   const textures = new Map<string, Texture>();
 
   const fallbackTextures = {
-    white: TextureLib.createSolidColor([255, 255, 255, 255], renderer.device),
-    black: TextureLib.createSolidColor([0, 0, 0, 255], renderer.device),
+    white: createTextureFromData({ textureData: [255, 255, 255, 255], width: 1, height: 1 }),
+    black: createTextureFromData({ textureData: [0, 0, 0, 255], width: 1, height: 1 }),
     // Normal map pointing straight up (0, 0, 1) = (128, 128, 255) in RGB
-    normal: TextureLib.createSolidColor([128, 128, 255, 255], renderer.device),
+    normal: createTextureFromData({ textureData: [128, 128, 255, 255], width: 1, height: 1 }),
   };
 
   async function loadTexture(key: string, url?: string): Promise<Texture> {
@@ -33,8 +33,11 @@ function TextureLibraryFactory(renderer: Renderer): TextureLibrary {
       const response = await fetch(url);
       const blob = await response.blob();
       const imageBitmap = await createImageBitmap(blob);
-
-      const texture = TextureLib.fromImageBitmap(imageBitmap, renderer.device);
+      const texture = createTextureFromData({
+        textureData: imageBitmap,
+        width: imageBitmap.width,
+        height: imageBitmap.height,
+      });
       textures.set(key, texture);
       return texture;
     } catch (error) {

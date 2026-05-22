@@ -13,14 +13,27 @@ export const enum LightFlag {
 }
 
 function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUniformBufferFunction): LightManager {
-  let lightsNeedUpdate = true;
-  let lights: Light[] = [];
   const ambientLight = {
     color: new Float32Array([1, 1, 1, 1]),
     intensity: 0.0,
   };
+  let lightUniformsBuffer: UniformBuffer | null = null;
+  const self: LightManager = {
+    lightUniformsBuffer: null,
+    ambientLight,
+    lights: [],
+    lightsNeedUpdate: true,
+    sceneUniformsBindGroup: null,
+    setAmbientLightColor,
+    setAmbientLightIntensity,
+    setAmbientLight,
+    updateLights,
+    createSceneUniformsBindGroup,
+    destroy,
+  };
+
   const { count, maxLights, positions, colors, params, directions, spotlightAngles, flags } = gatherLightingData();
-  let lightUniformsBuffer: UniformBuffer | null = createUniformBuffer(
+  lightUniformsBuffer = createUniformBuffer(
     {
       count: { type: 'u32', value: count },
       positions: { type: `array<vec4<f32>, ${maxLights}>`, value: positions },
@@ -34,7 +47,7 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
     },
     { addressSpace: 'storage' },
   );
-  let sceneUniformsBindGroup: GPUBindGroup | null = null;
+  self.lightUniformsBuffer = lightUniformsBuffer;
 
   function isDirectionalLight(light: Light): light is DirectionalLightLike {
     return (light.flags & LightFlag.DirectionalLight) !== 0 && light.type === 'DirectionalLight';
@@ -57,7 +70,7 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
     const spotlightAngles = new Float32Array(maxLights * 2);
     const flags = new Uint32Array(maxLights);
 
-    const activeLights = lights.slice(0, maxLights);
+    const activeLights = self.lights.slice(0, maxLights);
 
     activeLights.forEach((light, index) => {
       const base = index * 4;
@@ -97,11 +110,11 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
   }
 
   function rebuildLightsArray(rootEntity: Entity) {
-    lights = [];
+    self.lights = [];
 
     const traverse = (entity: Entity) => {
       if (isLightEntity(entity)) {
-        lights.push(entity);
+        self.lights.push(entity);
       }
 
       entity.children.forEach((child) => {
@@ -115,11 +128,11 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
   }
 
   function updateLightUniforms() {
-    if (!lightUniformsBuffer) return;
+    if (!self.lightUniformsBuffer) return;
 
     const { count, positions, colors, params, directions, spotlightAngles, flags } = gatherLightingData();
 
-    lightUniformsBuffer.updateUniforms({
+    self.lightUniformsBuffer.updateUniforms({
       count,
       positions,
       colors,
@@ -131,24 +144,24 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
   }
 
   function updateLights(rootEntity: Entity) {
-    if (lightsNeedUpdate) {
+    if (self.lightsNeedUpdate) {
       rebuildLightsArray(rootEntity);
     }
 
     updateLightUniforms();
 
-    lightsNeedUpdate = false;
+    self.lightsNeedUpdate = false;
   }
 
   function createSceneUniformsBindGroup() {
-    if (!lightUniformsBuffer?.buffer) return;
+    if (!self.lightUniformsBuffer?.buffer) return;
 
-    sceneUniformsBindGroup = renderer.device.createBindGroup({
+    self.sceneUniformsBindGroup = renderer.device.createBindGroup({
       layout: renderer.bindGroupLayouts.sceneBindGroupLayout,
       entries: [
         {
           binding: 1,
-          resource: { buffer: lightUniformsBuffer.buffer },
+          resource: { buffer: self.lightUniformsBuffer.buffer },
         },
       ],
     });
@@ -157,7 +170,7 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
   function setAmbientLightColor(color: Float32Array | [number, number, number, number]) {
     ambientLight.color = new Float32Array([color[0], color[1], color[2], color[3]]);
 
-    lightUniformsBuffer?.updateUniforms({
+    self.lightUniformsBuffer?.updateUniforms({
       ambientLightColor: colorToLinear(ambientLight.color),
     });
   }
@@ -165,7 +178,7 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
   function setAmbientLightIntensity(intensity: number) {
     ambientLight.intensity = intensity;
 
-    lightUniformsBuffer?.updateUniforms({
+    self.lightUniformsBuffer?.updateUniforms({
       ambientLightIntensity: ambientLight.intensity,
     });
   }
@@ -179,46 +192,12 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
   }
 
   function destroy() {
-    lightUniformsBuffer?.destroy();
-    lightUniformsBuffer = null;
-    sceneUniformsBindGroup = null;
+    self.lightUniformsBuffer?.destroy();
+    self.lightUniformsBuffer = null;
+    self.sceneUniformsBindGroup = null;
   }
 
-  const lightManager = {
-    get lightUniformsBuffer() {
-      return lightUniformsBuffer;
-    },
-    set lightUniformsBuffer(value: UniformBuffer | null) {
-      lightUniformsBuffer = value;
-    },
-    ambientLight,
-    get lights() {
-      return lights;
-    },
-    set lights(value: Light[]) {
-      lights = value;
-    },
-    get lightsNeedUpdate() {
-      return lightsNeedUpdate;
-    },
-    set lightsNeedUpdate(value: boolean) {
-      lightsNeedUpdate = value;
-    },
-    get sceneUniformsBindGroup() {
-      return sceneUniformsBindGroup;
-    },
-    set sceneUniformsBindGroup(value: GPUBindGroup | null) {
-      sceneUniformsBindGroup = value;
-    },
-    setAmbientLightColor,
-    setAmbientLightIntensity,
-    setAmbientLight,
-    updateLights,
-    createSceneUniformsBindGroup,
-    destroy,
-  };
-
-  return lightManager;
+  return self;
 }
 
 export { LightManagerFactory };

@@ -19,7 +19,7 @@ function SceneFactory(
   createUniformBuffer: CreateUniformBufferFunction,
 ) {
   return function createScene(options: SceneOptions = {}): Scene {
-    const { entity, subscribe } = entityFactory<Scene>({ ...options, type: 'Scene' });
+    const { entity: self, subscribe } = entityFactory<Scene>({ ...options, type: 'Scene' });
 
     const sceneUniformsBuffer = createUniformBuffer({
       _padding: { type: 'u32', value: 0 },
@@ -38,14 +38,17 @@ function SceneFactory(
       ],
     });
 
-    let renderList: DrawableEntity[] = [];
-    let renderListNeedsUpdate = true;
-
-    let clearColorSRGB: GPUColor = { r: 0, g: 0, b: 0, a: 1 };
-    let clearColor: GPUColor = { r: 0, g: 0, b: 0, a: 1 };
+    self.isScene = true;
+    self.sceneUniformsBuffer = sceneUniformsBuffer;
+    self.sceneUniformsBindGroup = sceneUniformsBindGroup;
+    self.lightManager = lightManager;
+    self.renderList = [];
+    self.renderListNeedsUpdate = true;
+    self.clearColorSRGB = { r: 0, g: 0, b: 0, a: 1 };
+    self.clearColor = { r: 0, g: 0, b: 0, a: 1 };
 
     subscribe('onHierarchyChanged', () => {
-      renderListNeedsUpdate = true;
+      self.renderListNeedsUpdate = true;
     });
 
     subscribe('onDestroy', () => {
@@ -54,8 +57,8 @@ function SceneFactory(
     });
 
     function setClearColor(color: ArrayLike<number>) {
-      clearColorSRGB = { r: color[0], g: color[1], b: color[2], a: color[3] };
-      clearColor = {
+      self.clearColorSRGB = { r: color[0], g: color[1], b: color[2], a: color[3] };
+      self.clearColor = {
         r: srgbToLinear(color[0] as number),
         g: srgbToLinear(color[1] as number),
         b: srgbToLinear(color[2] as number),
@@ -72,9 +75,9 @@ function SceneFactory(
     }
 
     function updateRenderList() {
-      if (!renderListNeedsUpdate) return;
+      if (!self.renderListNeedsUpdate) return;
 
-      renderList = [];
+      self.renderList = [];
 
       const isDrawableEntity = (node: Entity): node is DrawableEntity => {
         return typeof (node as Partial<DrawableEntity>).draw === 'function';
@@ -85,49 +88,27 @@ function SceneFactory(
         if (!isVisible) return;
 
         if (isDrawableEntity(node)) {
-          renderList.push(node);
+          self.renderList.push(node);
         }
 
         node.children.forEach((child) => traverse(child, isVisible));
       };
 
-      entity.children.forEach((child) => traverse(child, entity.visible));
-      renderListNeedsUpdate = false;
+      self.children.forEach((child) => traverse(child, self.visible));
+      self.renderListNeedsUpdate = false;
     }
 
     function updateLights() {
-      lightManager.updateLights(scene);
+      lightManager.updateLights(self);
     }
 
-    const scene: Scene = {
-      ...entity,
-      isScene: true,
-      sceneUniformsBuffer,
-      sceneUniformsBindGroup,
-      lightManager,
-      get renderList() {
-        return renderList;
-      },
-      get renderListNeedsUpdate() {
-        return renderListNeedsUpdate;
-      },
-      set renderListNeedsUpdate(value: boolean) {
-        renderListNeedsUpdate = value;
-      },
-      get clearColor() {
-        return clearColor;
-      },
-      get clearColorSRGB() {
-        return clearColorSRGB;
-      },
-      setClearColor,
-      setAmbientLightColor,
-      setAmbientLightIntensity,
-      updateRenderList,
-      updateLights,
-    };
+    self.setClearColor = setClearColor;
+    self.setAmbientLightColor = setAmbientLightColor;
+    self.setAmbientLightIntensity = setAmbientLightIntensity;
+    self.updateRenderList = updateRenderList;
+    self.updateLights = updateLights;
 
-    return scene;
+    return self;
   };
 }
 

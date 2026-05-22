@@ -4,7 +4,7 @@ import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 
 import { TonyGL } from '../../src';
-import { TextureFactory, type TextureColorSpace } from '../../src/texture/Texture';
+import { TextureColorSpace } from '../../src/texture/texture.types';
 
 const container = document.getElementById('app');
 
@@ -13,7 +13,6 @@ pane.registerPlugin(EssentialsPlugin);
 
 if (container) {
   const tony = await TonyGL({ containerElement: container, alpha: true });
-  const textureFactory = TextureFactory();
 
   const scene = tony.createScene();
   scene.setClearColor([0.25, 0.25, 0.25, 1]);
@@ -38,7 +37,13 @@ if (container) {
   async function loadTexture(url: string, colorSpace: TextureColorSpace = 'srgb') {
     const response = await fetch(url);
     const imageBitmap = await createImageBitmap(await response.blob());
-    return textureFactory.fromImageBitmap(imageBitmap, tony.renderer.device, colorSpace);
+    const texture = tony.createTextureFromData({
+      textureData: imageBitmap,
+      width: imageBitmap.width,
+      height: imageBitmap.height,
+      colorSpace,
+    });
+    return texture;
   }
 
   const albedoTexture = await loadTexture('/albedo.png');

@@ -1,142 +1,114 @@
 import type { uuid } from '../core/core.types';
-import type {
-  TextureColorSpace,
-  Texture,
-  TextureSubscriber,
-  CreateSolidColorTexture,
-  CreateTextureFromImageBitmap,
-} from './texture.types';
+import { Renderer } from '../renderer/renderer.types';
+import type { TextureColorSpace, Texture, TextureSubscriber } from './texture.types';
 
-export type TextureOptions = {
+export type CreateTextureResourceOptions = {
   width: number;
   height: number;
   colorSpace?: TextureColorSpace;
 };
 
-function TextureFactory() {
-  function createTexture(options: TextureOptions): Texture {
-    const id = crypto.randomUUID();
-    let gpuTexture: GPUTexture | null = null;
-    let gpuTextureView: GPUTextureView | null = null;
-    const width = options.width;
-    const height = options.height;
+export type CreateTextureFromDataOptions = {
+  width: number;
+  height: number;
+  textureData: ImageBitmap | [number, number, number] | [number, number, number, number];
+  colorSpace?: TextureColorSpace;
+};
+function TextureFactory(renderer: Renderer) {
+  function createTextureResource(options: CreateTextureResourceOptions): Texture {
     const colorSpace = options.colorSpace || 'srgb';
     const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
-    let _repeat = new Float32Array([1, 1]);
-    let isInitialized = false;
-    const subscribers: Map<uuid, TextureSubscriber> = new Map();
 
-    function getView(): GPUTextureView {
-      if (!gpuTextureView) {
-        throw new Error(`Texture ${id} has no view. Initialize first.`);
-      }
-      return gpuTextureView;
-    }
-
-    function destroy() {
-      if (gpuTexture) {
-        gpuTexture.destroy();
-        gpuTexture = null;
-        gpuTextureView = null;
-      }
-    }
-
-    function subscribe(subscriber: TextureSubscriber) {
-      if (!subscribers.has(subscriber.id)) {
-        subscribers.set(subscriber.id, subscriber);
-      }
-    }
-
-    function unsubscribe(id: uuid) {
-      subscribers.delete(id);
-    }
-
-    function publish() {
-      subscribers.forEach((subscriber) => subscriber.onTextureUpdate(texture));
-    }
-
-    const texture: Texture = {
-      id,
-      gpuTexture,
-      width,
-      height,
-      format,
+    const self: Texture = {
+      id: crypto.randomUUID(),
+      width: options.width,
+      height: options.height,
       colorSpace,
-      isInitialized,
-      get repeat() {
-        return _repeat;
-      },
-      set repeat(repeat: Float32Array) {
-        _repeat = new Float32Array(repeat);
-        publish();
-      },
-      getView,
+      format,
+      repeat: new Float32Array([1, 1]),
+      subscribers: new Map<uuid, TextureSubscriber>(),
+      gpuTexture: null,
+      gpuTextureView: null,
       destroy,
+      setRepeat,
       subscribe,
       unsubscribe,
     };
 
-    // Internal helpers for initialization
-    function initFromImageBitmap(imageBitmap: ImageBitmap, device: GPUDevice) {
-      texture.gpuTexture = device.createTexture({
+    function destroy() {
+      if (self.gpuTexture) {
+        self.gpuTexture.destroy();
+        self.gpuTexture = null;
+        self.gpuTextureView = null;
+      }
+    }
+
+    function subscribe(subscriber: TextureSubscriber) {
+      if (!self.subscribers.has(subscriber.id)) {
+        self.subscribers.set(subscriber.id, subscriber);
+      }
+    }
+
+    function unsubscribe(id: uuid) {
+      self.subscribers.delete(id);
+    }
+
+    function publish() {
+      self.subscribers.forEach((subscriber) => subscriber.onTextureUpdate(self));
+    }
+
+    function setRepeat(value: ArrayLike<number>) {
+      self.repeat.set([value[0], value[1]]);
+      publish();
+    }
+
+    return self;
+  }
+
+  function createTextureFromData(options: CreateTextureFromDataOptions): Texture {
+    const { width, height, textureData, colorSpace = 'srgb' } = options;
+
+    const self = createTextureResource({ width, height, colorSpace });
+
+    if (textureData instanceof ImageBitmap) {
+      self.gpuTexture = renderer.device.createTexture({
         size: { width, height },
-        format,
+        format: self.format,
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
         mipLevelCount: 1,
       });
-      device.queue.copyExternalImageToTexture({ source: imageBitmap, flipY: true }, { texture: texture.gpuTexture }, [
-        width,
-        height,
-      ]);
-      gpuTextureView = texture.gpuTexture.createView();
-      texture.isInitialized = true;
-    }
 
-    function initFromData(data: Uint8Array, device: GPUDevice) {
-      texture.gpuTexture = device.createTexture({
+      renderer.device.queue.copyExternalImageToTexture(
+        { source: textureData, flipY: true },
+        { texture: self.gpuTexture },
+        [width, height],
+      );
+
+      self.gpuTextureView = self.gpuTexture.createView();
+    } else if (Array.isArray(textureData)) {
+      const colorData = new Uint8Array(textureData.length === 4 ? [...textureData] : [...textureData, 1]);
+
+      self.gpuTexture = renderer.device.createTexture({
         size: { width, height },
-        format,
+        format: self.format,
         usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
         mipLevelCount: 1,
       });
-      device.queue.writeTexture({ texture: texture.gpuTexture }, data, { bytesPerRow: width * 4 }, { width, height });
-      gpuTextureView = texture.gpuTexture.createView();
-      texture.isInitialized = true;
+
+      renderer.device.queue.writeTexture(
+        { texture: self.gpuTexture },
+        colorData,
+        { bytesPerRow: width * 4 },
+        { width, height },
+      );
+
+      self.gpuTextureView = self.gpuTexture.createView();
     }
 
-    // Attach helpers for factory
-    (texture as any)._initFromImageBitmap = initFromImageBitmap;
-    (texture as any)._initFromData = initFromData;
-
-    return texture;
+    return self;
   }
 
-  const fromImageBitmap: CreateTextureFromImageBitmap = (imageBitmap, device, colorSpace = 'srgb') => {
-    const texture = createTexture({
-      width: imageBitmap.width,
-      height: imageBitmap.height,
-      colorSpace,
-    });
-    (texture as any)._initFromImageBitmap(imageBitmap, device);
-    return texture;
-  };
-
-  const createSolidColor: CreateSolidColorTexture = (color, device, colorSpace = 'srgb') => {
-    const texture = createTexture({
-      width: 1,
-      height: 1,
-      colorSpace,
-    });
-    const data = new Uint8Array([color[0], color[1], color[2], color[3]]);
-    (texture as any)._initFromData(data, device);
-    return texture;
-  };
-
-  return {
-    createTexture,
-    fromImageBitmap,
-    createSolidColor,
-  };
+  return createTextureFromData;
 }
 
 export { TextureFactory };

@@ -6,25 +6,12 @@ import type {
   EntityWithSubscription,
   EntitySubscriptionCallback,
   EntitySubscriptionEvent,
-  uuid,
 } from './core.types';
 
 const EntityFactory: EntityFactoryFunction = <T extends Entity = Entity>(
   options: EntityOptions,
 ): EntityWithSubscription<T> => {
-  const id: uuid = crypto.randomUUID();
-  const type: string = options.type;
   const children: Entity[] = [];
-  const parent: Entity | null = null;
-  let name: string = options.name ?? '';
-  let position: Float32Array = vec3.create(...Array.from(options.position ?? [0, 0, 0]));
-  let scale: Float32Array = vec3.create(...Array.from(options.scale ?? [1, 1, 1]));
-  let rotation: Float32Array = vec3.create(...Array.from(options.rotation ?? [0, 0, 0]));
-  let quaternion: Float32Array = quat.create(...Array.from(options.quaternion ?? [0, 0, 0, 1]));
-  let matrix: Float32Array = mat4.create();
-  let matrixWorld: Float32Array = mat4.create();
-  let visible: boolean = options.visible ?? true;
-  let matrixNeedsUpdate: boolean = true;
 
   const subscribers = new Map<EntitySubscriptionEvent, EntitySubscriptionCallback[]>([
     ['onTransformChanged', []],
@@ -53,39 +40,34 @@ const EntityFactory: EntityFactoryFunction = <T extends Entity = Entity>(
   }
 
   function setPosition(newPosition: ArrayLike<number>) {
-    vec3.set(newPosition[0], newPosition[1], newPosition[2], position);
-    matrixNeedsUpdate = true;
+    vec3.set(newPosition[0], newPosition[1], newPosition[2], self.position);
     self.matrixNeedsUpdate = true;
     updateMatrix();
     publish('onTransformChanged');
   }
 
   function setScale(newScale: ArrayLike<number>) {
-    vec3.set(newScale[0], newScale[1], newScale[2], scale);
-    matrixNeedsUpdate = true;
+    vec3.set(newScale[0], newScale[1], newScale[2], self.scale);
     self.matrixNeedsUpdate = true;
     updateMatrix();
     publish('onTransformChanged');
   }
 
   function setRotation(newRotation: ArrayLike<number>) {
-    vec3.set(newRotation[0], newRotation[1], newRotation[2], rotation);
-    matrixNeedsUpdate = true;
+    vec3.set(newRotation[0], newRotation[1], newRotation[2], self.rotation);
     self.matrixNeedsUpdate = true;
     updateMatrix();
     publish('onTransformChanged');
   }
 
   function setQuaternion(newQuaternion: ArrayLike<number>) {
-    quat.set(newQuaternion[0], newQuaternion[1], newQuaternion[2], newQuaternion[3], quaternion);
-    matrixNeedsUpdate = true;
+    quat.set(newQuaternion[0], newQuaternion[1], newQuaternion[2], newQuaternion[3], self.quaternion);
     self.matrixNeedsUpdate = true;
     updateMatrix();
     publish('onTransformChanged');
   }
 
   function setVisible(isVisible: boolean) {
-    visible = isVisible;
     self.visible = isVisible;
     publish('onVisibilityChanged');
   }
@@ -120,20 +102,20 @@ const EntityFactory: EntityFactoryFunction = <T extends Entity = Entity>(
   }
 
   function updateMatrix() {
-    if (!matrixNeedsUpdate) {
+    if (!self.matrixNeedsUpdate) {
       return;
     }
 
     // Order: Rotation, Scale, Translation
-    quat.fromEuler(rotation[0], rotation[1], rotation[2], 'xyz', quaternion);
-    mat4.fromQuat(quaternion, matrix);
-    mat4.scale(matrix, scale, matrix);
-    mat4.setTranslation(matrix, position, matrix);
+    quat.fromEuler(self.rotation[0], self.rotation[1], self.rotation[2], 'xyz', self.quaternion);
+    mat4.fromQuat(self.quaternion, self.matrix);
+    mat4.scale(self.matrix, self.scale, self.matrix);
+    mat4.setTranslation(self.matrix, self.position, self.matrix);
 
     if (self.parent) {
-      mat4.multiply(self.parent.matrixWorld, matrix, matrixWorld);
+      mat4.multiply(self.parent.matrixWorld, self.matrix, self.matrixWorld);
     } else {
-      mat4.copy(matrix, matrixWorld);
+      mat4.copy(self.matrix, self.matrixWorld);
     }
 
     children.forEach((child) => {
@@ -141,27 +123,26 @@ const EntityFactory: EntityFactoryFunction = <T extends Entity = Entity>(
       child.updateMatrix();
     });
 
-    matrixNeedsUpdate = false;
     self.matrixNeedsUpdate = false;
 
     publish('onMatrixUpdated');
   }
 
   const self: Entity = {
-    id,
-    name,
-    type,
+    id: crypto.randomUUID(),
+    name: options.name ?? '',
+    type: options.type,
     isLight: false,
     children,
-    parent,
-    position,
-    scale,
-    rotation,
-    visible,
-    quaternion,
-    matrix,
-    matrixWorld,
-    matrixNeedsUpdate,
+    parent: null,
+    position: vec3.create(...Array.from(options.position ?? [0, 0, 0])),
+    scale: vec3.create(...Array.from(options.scale ?? [1, 1, 1])),
+    rotation: vec3.create(...Array.from(options.rotation ?? [0, 0, 0])),
+    visible: options.visible ?? true,
+    quaternion: quat.create(...Array.from(options.quaternion ?? [0, 0, 0, 1])),
+    matrix: mat4.create(),
+    matrixWorld: mat4.create(),
+    matrixNeedsUpdate: true,
     add,
     remove,
     setPosition,

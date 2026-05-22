@@ -14,7 +14,7 @@ function MeshFactory(
   createUniformBuffer: CreateUniformBufferFunction,
 ) {
   return function createMesh(geometry: Geometry, material: BaseMaterial, options?: MeshOptions): Mesh {
-    const { entity } = entityFactory<Mesh>({
+    const { entity: self } = entityFactory<Mesh>({
       ...options,
       type: 'Mesh',
     });
@@ -77,7 +77,7 @@ function MeshFactory(
     });
 
     const entityUniformsBuffer = createUniformBuffer({
-      modelMatrix: { type: 'mat4x4<f32>', value: entity.matrixWorld },
+      modelMatrix: { type: 'mat4x4<f32>', value: self.matrixWorld },
     });
 
     const entityUniformsBindGroup = renderer.device.createBindGroup({
@@ -85,10 +85,10 @@ function MeshFactory(
       entries: [{ binding: 0, resource: { buffer: entityUniformsBuffer.buffer! } }],
     });
 
-    const baseUpdateMatrix = entity.updateMatrix;
+    const baseUpdateMatrix = self.updateMatrix;
 
     function updateEntityBufferFromMatrix() {
-      entityUniformsBuffer.updateUniforms({ modelMatrix: entity.matrixWorld });
+      entityUniformsBuffer.updateUniforms({ modelMatrix: self.matrixWorld });
     }
 
     function updateMatrix() {
@@ -127,20 +127,18 @@ function MeshFactory(
       geometry.destroy();
     }
 
-    const mesh: Mesh = Object.assign(entity, {
-      geometry,
-      material,
-      pipeline,
-      entityUniformsBuffer,
-      entityUniformsBindGroup,
-      updateMatrix,
-      draw,
-      destroy,
-    });
+    self.geometry = geometry;
+    self.material = material;
+    self.pipeline = pipeline;
+    self.entityUniformsBuffer = entityUniformsBuffer;
+    self.entityUniformsBindGroup = entityUniformsBindGroup;
+    self.updateMatrix = updateMatrix;
+    self.draw = draw;
+    self.destroy = destroy;
 
     updateEntityBufferFromMatrix();
 
-    return mesh;
+    return self;
   };
 }
 

@@ -6,7 +6,6 @@ function UniformBufferFactory(renderer: Renderer) {
   return function createUniformBuffer(uniformObject: UniformObject, options?: UniformBufferOptions): UniformBuffer {
     const id = crypto.randomUUID();
     const type = 'UniformBuffer';
-    const uniforms = uniformObject;
     const addressSpace = options?.addressSpace ?? 'uniform';
     const usage =
       options?.usage ??
@@ -15,20 +14,27 @@ function UniformBufferFactory(renderer: Renderer) {
         : GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST);
     let needsUpdate = true;
 
-    const { bufferData, layoutEntries } = computeBufferLayout(uniforms, {
+    const { bufferData, layoutEntries } = computeBufferLayout(uniformObject, {
       addressSpace: addressSpace,
     });
 
-    let buffer: GPUBuffer | null = renderer.device.createBuffer({
-      size: bufferData.byteLength,
-      usage,
-    });
-
-    writeUpdatedBufferData();
+    const self: UniformBuffer = {
+      id,
+      type,
+      buffer: renderer.device.createBuffer({
+        size: bufferData.byteLength,
+        usage,
+      }),
+      uniforms: uniformObject,
+      bufferData,
+      updateUniforms,
+      writeUpdatedBufferData,
+      destroy,
+    };
 
     function updateUniforms(updatedUniforms: Record<string, UniformValueInput>) {
       for (const key in updatedUniforms) {
-        const currentUniform = uniforms[key];
+        const currentUniform = self.uniforms[key];
         if (!currentUniform) {
           continue;
         }
@@ -56,35 +62,30 @@ function UniformBufferFactory(renderer: Renderer) {
         currentUniform.value.set(nextValue);
       }
 
-      writeUniformValuesToBuffer(uniforms, bufferData, layoutEntries);
+      if (!self.bufferData) throw new Error('Uniform buffer data missing');
+      writeUniformValuesToBuffer(self.uniforms, self.bufferData, layoutEntries);
       needsUpdate = true;
     }
 
     function writeUpdatedBufferData() {
       if (needsUpdate) {
-        if (!buffer || !bufferData) throw new Error('Uniform buffer not initialized');
-        renderer.device.queue.writeBuffer(buffer, 0, bufferData);
+        if (!self.buffer || !self.bufferData) throw new Error('Uniform buffer not initialized');
+        renderer.device.queue.writeBuffer(self.buffer, 0, self.bufferData);
         needsUpdate = false;
       }
     }
 
     function destroy() {
-      if (buffer) {
-        buffer.destroy();
-        buffer = null;
+      if (self.buffer) {
+        self.buffer.destroy();
+        self.buffer = null;
       }
+      self.bufferData = null;
     }
 
-    return {
-      id,
-      type,
-      buffer,
-      uniforms,
-      bufferData,
-      updateUniforms,
-      writeUpdatedBufferData,
-      destroy,
-    };
+    writeUpdatedBufferData();
+
+    return self;
   };
 }
 

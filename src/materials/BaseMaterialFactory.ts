@@ -47,7 +47,7 @@ export function BaseMaterialFactory(renderer: Renderer, createUniformBuffer: Cre
           })
         : null;
 
-    const material: BaseMaterial = {
+    const self: BaseMaterial = {
       id,
       type,
       shader: shaderIdentifier,
@@ -59,17 +59,19 @@ export function BaseMaterialFactory(renderer: Renderer, createUniformBuffer: Cre
       depthWrite: options.depthWrite ?? true,
       usesAlphaPipeline: options.transparent ?? false,
       updateUniforms(updatedUniforms) {
-        materialUniformsBuffer?.updateUniforms(updatedUniforms);
+        self.materialUniformsBuffer?.updateUniforms(updatedUniforms);
       },
       writeBuffers() {
-        materialUniformsBuffer?.writeUpdatedBufferData();
+        self.materialUniformsBuffer?.writeUpdatedBufferData();
       },
       destroy() {
-        materialUniformsBuffer?.destroy();
+        self.materialUniformsBuffer?.destroy();
+        self.materialUniformsBuffer = null;
+        self.materialUniformsBindGroup = null;
       },
     };
 
-    return material as T;
+    return self as T;
   }
 
   return { createBaseMaterial };

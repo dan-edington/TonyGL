@@ -25,7 +25,7 @@ function NormalMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
       materialFlags |= MaterialFlags.Normal;
     }
 
-    const normalMaterial = createBaseMaterial<NormalMaterial>({
+    const self = createBaseMaterial<NormalMaterial>({
       type: 'normal',
       shader: 'normal',
       transparent: false,
@@ -38,13 +38,13 @@ function NormalMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },
-          { binding: 1, resource: normalTexture.getView() },
+          { binding: 1, resource: normalTexture.gpuTextureView },
           { binding: 2, resource: sampler },
         ];
       },
     });
 
-    return normalMaterial;
+    return self;
   }
 
   return { createNormalMaterial };

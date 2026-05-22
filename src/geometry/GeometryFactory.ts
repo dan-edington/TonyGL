@@ -199,14 +199,20 @@ function GeometryFactory(renderer: Renderer) {
     }
 
     function destroy() {
-      vertexBuffer?.destroy();
-      indexBuffer?.destroy();
-      normalBuffer?.destroy();
-      uvBuffer?.destroy();
-      tangentBuffer?.destroy();
+      self.vertexBuffer?.destroy();
+      self.indexBuffer?.destroy();
+      self.normalBuffer?.destroy();
+      self.uvBuffer?.destroy();
+      self.tangentBuffer?.destroy();
+
+      self.vertexBuffer = null;
+      self.indexBuffer = null;
+      self.normalBuffer = null;
+      self.uvBuffer = null;
+      self.tangentBuffer = null;
     }
 
-    return {
+    const self: Geometry = {
       id,
       name,
       type,
@@ -226,6 +232,8 @@ function GeometryFactory(renderer: Renderer) {
       uvBuffer,
       destroy,
     };
+
+    return self;
   };
 }
 

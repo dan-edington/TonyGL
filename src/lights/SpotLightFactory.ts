@@ -12,22 +12,20 @@ function SpotLightFactory(entityFactory: EntityFactoryFunction) {
   const createDirectionalLight = DirectionalLightFactory(entityFactory);
 
   return function createSpotLight(options: SpotLightOptions = {}): SpotLight {
-    const directionalLight = createDirectionalLight(options);
-    const spotLight: SpotLight = Object.assign(directionalLight, {
-      angle: options.angle ?? Math.PI / 5,
-      penumbra: options.penumbra ?? 0.2,
-      setAngle(value: number) {
-        spotLight.angle = value;
-      },
-      setPenumbra(value: number) {
-        spotLight.penumbra = Math.max(0, Math.min(1, value));
-      },
-    });
+    const self = createDirectionalLight(options) as SpotLight;
+    self.angle = options.angle ?? Math.PI / 5;
+    self.penumbra = options.penumbra ?? 0.2;
+    self.setAngle = (value: number) => {
+      self.angle = value;
+    };
+    self.setPenumbra = (value: number) => {
+      self.penumbra = Math.max(0, Math.min(1, value));
+    };
 
-    spotLight.type = 'SpotLight';
-    spotLight.flags = (spotLight.flags | LightFlag.SpotLight) & ~LightFlag.DirectionalLight;
+    self.type = 'SpotLight';
+    self.flags = (self.flags | LightFlag.SpotLight) & ~LightFlag.DirectionalLight;
 
-    return spotLight;
+    return self;
   };
 }
 
