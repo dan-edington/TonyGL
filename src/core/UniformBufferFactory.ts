@@ -26,7 +26,7 @@ function UniformBufferFactory(renderer: Renderer) {
 
     writeUpdatedBufferData();
 
-    function updateUniform(updatedUniforms: Record<string, UniformValueInput>) {
+    function updateUniforms(updatedUniforms: Record<string, UniformValueInput>) {
       for (const key in updatedUniforms) {
         const currentUniform = uniforms[key];
         if (!currentUniform) {
@@ -81,7 +81,7 @@ function UniformBufferFactory(renderer: Renderer) {
       buffer,
       uniforms,
       bufferData,
-      updateUniform,
+      updateUniforms,
       writeUpdatedBufferData,
       destroy,
     };

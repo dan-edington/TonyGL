@@ -59,7 +59,7 @@ export function BaseMaterialFactory(renderer: Renderer, createUniformBuffer: Cre
       depthWrite: options.depthWrite ?? true,
       usesAlphaPipeline: options.transparent ?? false,
       updateUniforms(updatedUniforms) {
-        materialUniformsBuffer?.updateUniform(updatedUniforms);
+        materialUniformsBuffer?.updateUniforms(updatedUniforms);
       },
       writeBuffers() {
         materialUniformsBuffer?.writeUpdatedBufferData();

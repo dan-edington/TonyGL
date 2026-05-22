@@ -88,7 +88,7 @@ function MeshFactory(
     const baseUpdateMatrix = entity.updateMatrix;
 
     function updateEntityBufferFromMatrix() {
-      entityUniformsBuffer.updateUniform({ modelMatrix: entity.matrixWorld });
+      entityUniformsBuffer.updateUniforms({ modelMatrix: entity.matrixWorld });
     }
 
     function updateMatrix() {

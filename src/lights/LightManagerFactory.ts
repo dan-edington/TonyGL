@@ -119,7 +119,7 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
 
     const { count, positions, colors, params, directions, spotlightAngles, flags } = gatherLightingData();
 
-    lightUniformsBuffer.updateUniform({
+    lightUniformsBuffer.updateUniforms({
       count,
       positions,
       colors,
@@ -157,7 +157,7 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
   function setAmbientLightColor(color: Float32Array | [number, number, number, number]) {
     ambientLight.color = new Float32Array([color[0], color[1], color[2], color[3]]);
 
-    lightUniformsBuffer?.updateUniform({
+    lightUniformsBuffer?.updateUniforms({
       ambientLightColor: colorToLinear(ambientLight.color),
     });
   }
@@ -165,7 +165,7 @@ function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUnif
   function setAmbientLightIntensity(intensity: number) {
     ambientLight.intensity = intensity;
 
-    lightUniformsBuffer?.updateUniform({
+    lightUniformsBuffer?.updateUniforms({
       ambientLightIntensity: ambientLight.intensity,
     });
   }

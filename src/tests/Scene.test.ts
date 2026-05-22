@@ -31,7 +31,7 @@ function createUniformBufferStub(onDestroy?: () => void): UniformBuffer {
     buffer: {} as GPUBuffer,
     uniforms: {},
     bufferData: new ArrayBuffer(0),
-    updateUniform() {},
+    updateUniforms() {},
     writeUpdatedBufferData() {},
     destroy() {
       onDestroy?.();

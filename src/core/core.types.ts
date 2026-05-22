@@ -78,7 +78,7 @@ export type UniformBuffer = {
   buffer: GPUBuffer | null;
   uniforms: Record<string, UniformValue>;
   bufferData: ArrayBuffer | null;
-  updateUniform(updatedUniforms: Record<string, UniformValueInput>): void;
+  updateUniforms(updatedUniforms: Record<string, UniformValueInput>): void;
   writeUpdatedBufferData(): void;
   destroy(): void;
 };

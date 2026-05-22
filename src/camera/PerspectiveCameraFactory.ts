@@ -71,7 +71,7 @@ function PerspectiveCameraFactory(
     function updateCameraUniforms() {
       if (!bufferNeedsUpdate) return;
 
-      cameraUniformsBuffer.updateUniform({
+      cameraUniformsBuffer.updateUniforms({
         viewProjectionMatrix,
         worldPosition: entity.position,
       });
