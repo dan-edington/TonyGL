@@ -2,8 +2,9 @@ import { constants } from '../../constants/constants';
 import { postProcessingBindGroupLayoutDescriptor } from '../bindGroupLayouts/postprocessing';
 import { GeometryFactory } from '../../geometry/GeometryFactory';
 import { PipelineManagerFactory } from '../PipelineManagerFactory';
-import { Pass, PassContext, PassOptions, createPass } from './pass';
-import { Scene } from '../../sceneObjects/SceneFactory';
+import { createPass } from './pass';
+import type { Scene } from '../../sceneObjects/sceneObjects.types';
+import type { Pass, PassContext, PassOptions } from '../renderer.types';
 
 type PostProcessingPassOptions = PassOptions & {
   shaderModule: GPUShaderModule;

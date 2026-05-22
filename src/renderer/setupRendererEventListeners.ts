@@ -1,5 +1,5 @@
-import { Renderer } from './configureRenderer';
 import { createMultiSampleTexture, createDepthTexture } from './internalTextures';
+import type { Renderer } from './renderer.types';
 
 function setupRendererEventListeners(renderer: Renderer) {
   const abortController = new AbortController();

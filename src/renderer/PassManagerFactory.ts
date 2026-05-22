@@ -1,20 +1,6 @@
 import { errorMessages } from '../constants/errorMessages';
-import { Renderer } from './configureRenderer';
-import { Pass, PassContext, PassFactory, PassRoute, RenderTarget } from './passes/pass';
-import { Scene } from '../sceneObjects/SceneFactory';
-
-export type PassManager = {
-  scene: Scene | null;
-  camera: unknown | null;
-  registerPass(name: string, passFactory: PassFactory, passRoute?: Partial<PassRoute>): void;
-  runPass(name: string, commandEncoder: GPUCommandEncoder): void;
-  runPasses(passOrder: string[], commandEncoder: GPUCommandEncoder): void;
-  createRenderTarget(name: string, width: number, height: number, format: GPUTextureFormat): void;
-  getRenderTarget(name: string): RenderTarget | null;
-  validateRenderTarget(name: string, width: number, height: number, format: GPUTextureFormat): RenderTarget;
-  resizeRenderTargets(width: number, height: number): void;
-  destroyRenderTargets(): void;
-};
+import { Scene } from '../sceneObjects/sceneObjects.types';
+import { Renderer, Pass, PassContext, PassFactory, PassManager, PassRoute, RenderTarget } from './renderer.types';
 
 function PassManagerFactory(renderer: Renderer) {
   return function createPassManager(): PassManager {

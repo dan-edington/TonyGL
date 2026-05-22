@@ -1,19 +1,11 @@
 import { vec3 } from 'wgpu-matrix';
-import type { PerspectiveCamera } from './PerspectiveCameraFactory';
+import type { OrbitControls, PerspectiveCamera } from './camera.types';
 
 export type OrbitControlsOptions = {
   camera: PerspectiveCamera;
   domElement?: HTMLElement;
   target?: ArrayLike<number>;
   rotationSpeed?: number;
-};
-
-export type OrbitControls = {
-  camera: PerspectiveCamera;
-  domElement: HTMLElement;
-  target: Float32Array;
-  isDragging: boolean;
-  destroy(): void;
 };
 
 function OrbitControlsFactory(options: OrbitControlsOptions): OrbitControls {

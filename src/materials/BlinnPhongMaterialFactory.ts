@@ -1,20 +1,8 @@
+import { CreateUniformBufferFunction, UniformBuffer } from '../core/core.types';
+import { Renderer } from '../renderer/renderer.types';
 import { colorToLinear } from '../utilities/colorUtilities';
-import type { Renderer } from '../renderer/configureRenderer';
-import type { CreateUniformBufferFunction, UniformBuffer } from '../core/UniformBufferFactory';
-import { MaterialFlags } from './MaterialsFactory';
-import type { BaseMaterial } from './MaterialsFactory';
-import { BaseMaterialFactory } from './BaseMaterialFactory';
-
-export type BlinnPhongMaterial = BaseMaterial & {
-  color: Float32Array;
-  setColor(value: ArrayLike<number>): void;
-  shininess: number;
-  setShininess(value: number): void;
-  specularColor: Float32Array;
-  setSpecularColor(value: ArrayLike<number>): void;
-  specularStrength: number;
-  setSpecularStrength(value: number): void;
-};
+import { BaseMaterialFactory, MaterialFlags } from './BaseMaterialFactory';
+import { BlinnPhongMaterial } from './materials.types';
 
 export type BlinnPhongMaterialOptions = {
   name?: string;
@@ -59,7 +47,8 @@ function BlinnPhongMaterialFactory(renderer: Renderer, createUniformBuffer: Crea
     if (!sampler) {
       throw new Error('BlinnPhong material sampler not found.');
     }
-    const base = createBaseMaterial({
+
+    const blinnPhongMaterial = createBaseMaterial({
       type: 'blinnphong',
       shader: 'blinnphong',
       transparent: options.transparent ?? false,
@@ -75,7 +64,7 @@ function BlinnPhongMaterialFactory(renderer: Renderer, createUniformBuffer: Crea
         specularColor: { type: 'vec3<f32>', value: colorToLinear(specularColor) },
         specularStrength: { type: 'f32', value: specularStrength },
       },
-      buildEntries(materialUniformsBuffer: UniformBuffer | null) {
+      buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },
@@ -85,31 +74,33 @@ function BlinnPhongMaterialFactory(renderer: Renderer, createUniformBuffer: Crea
           { binding: 4, resource: sampler },
         ];
       },
-    });
-    base.usesAlphaPipeline = base.transparent || color[3] < 1;
-    const material = base as BlinnPhongMaterial;
-    material.color = color;
-    material.setColor = (value: ArrayLike<number>) => {
-      material.color = new Float32Array(value);
-      material.updateUniforms({ color: colorToLinear(material.color) });
-      material.usesAlphaPipeline = material.transparent || material.color[3] < 1;
+    }) as BlinnPhongMaterial;
+
+    blinnPhongMaterial.color = color;
+    blinnPhongMaterial.setColor = (value: ArrayLike<number>) => {
+      blinnPhongMaterial.color = new Float32Array(value);
+      blinnPhongMaterial.updateUniforms({ color: colorToLinear(blinnPhongMaterial.color) });
     };
-    material.shininess = shininess;
-    material.setShininess = (value: number) => {
-      material.shininess = value;
-      material.updateUniforms({ shininess: material.shininess });
+
+    blinnPhongMaterial.shininess = shininess;
+    blinnPhongMaterial.setShininess = (value: number) => {
+      blinnPhongMaterial.shininess = value;
+      blinnPhongMaterial.updateUniforms({ shininess: blinnPhongMaterial.shininess });
     };
-    material.specularColor = specularColor;
-    material.setSpecularColor = (value: ArrayLike<number>) => {
-      material.specularColor = new Float32Array(value);
-      material.updateUniforms({ specularColor: colorToLinear(material.specularColor) });
+
+    blinnPhongMaterial.specularColor = specularColor;
+    blinnPhongMaterial.setSpecularColor = (value: ArrayLike<number>) => {
+      blinnPhongMaterial.specularColor = new Float32Array(value);
+      blinnPhongMaterial.updateUniforms({ specularColor: colorToLinear(blinnPhongMaterial.specularColor) });
     };
-    material.specularStrength = specularStrength;
-    material.setSpecularStrength = (value: number) => {
-      material.specularStrength = value;
-      material.updateUniforms({ specularStrength: material.specularStrength });
+
+    blinnPhongMaterial.specularStrength = specularStrength;
+    blinnPhongMaterial.setSpecularStrength = (value: number) => {
+      blinnPhongMaterial.specularStrength = value;
+      blinnPhongMaterial.updateUniforms({ specularStrength: blinnPhongMaterial.specularStrength });
     };
-    return material;
+
+    return blinnPhongMaterial;
   }
 
   return { createBlinnPhongMaterial };

@@ -1,27 +1,17 @@
 import { errorMessages } from '../constants/errorMessages';
 import { srgbToLinear } from '../utilities/colorUtilities';
-import { Renderer } from '../renderer/configureRenderer';
-import { Entity, EntityFactoryFunction, EntityOptions } from '../core/EntityFactory';
-import { LightManagerFactory, LightManager } from '../lights/LightManagerFactory';
-import { CreateUniformBufferFunction, UniformBuffer } from '../core/UniformBufferFactory';
+import { LightManagerFactory } from '../lights/LightManagerFactory';
+import type {
+  CreateUniformBufferFunction,
+  DrawableEntity,
+  Entity,
+  EntityFactoryFunction,
+  EntityOptions,
+} from '../core/core.types';
+import type { Scene } from './sceneObjects.types';
+import type { Renderer } from '../renderer/renderer.types';
 
 export type SceneOptions = Omit<EntityOptions, 'type'>;
-
-export type Scene = Entity & {
-  isScene: true;
-  renderList: Entity[];
-  renderListNeedsUpdate: boolean;
-  sceneUniformsBuffer: UniformBuffer | null;
-  sceneUniformsBindGroup: GPUBindGroup | null;
-  clearColor: GPUColor;
-  clearColorSRGB: GPUColor;
-  lightManager: LightManager;
-  setClearColor(color: ArrayLike<number>): void;
-  setAmbientLightColor(color: ArrayLike<number>): void;
-  setAmbientLightIntensity(intensity: number): void;
-  updateRenderList(): void;
-  updateLights(): void;
-};
 
 function SceneFactory(
   renderer: Renderer,
@@ -48,7 +38,7 @@ function SceneFactory(
       ],
     });
 
-    let renderList: Entity[] = [];
+    let renderList: DrawableEntity[] = [];
     let renderListNeedsUpdate = true;
 
     let clearColorSRGB: GPUColor = { r: 0, g: 0, b: 0, a: 1 };
@@ -86,10 +76,18 @@ function SceneFactory(
 
       renderList = [];
 
+      const isDrawableEntity = (node: Entity): node is DrawableEntity => {
+        return typeof (node as Partial<DrawableEntity>).draw === 'function';
+      };
+
       const traverse = (node: Entity, parentVisible: boolean) => {
         const isVisible = parentVisible && node.visible;
         if (!isVisible) return;
-        renderList.push(node);
+
+        if (isDrawableEntity(node)) {
+          renderList.push(node);
+        }
+
         node.children.forEach((child) => traverse(child, isVisible));
       };
 

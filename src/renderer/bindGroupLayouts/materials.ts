@@ -3,11 +3,10 @@ import { lambertMaterialLayoutDescriptor } from '../../materials/LambertMaterial
 import { normalMaterialLayoutDescriptor } from '../../materials/NormalMaterialFactory';
 import { unlitMaterialLayoutDescriptor } from '../../materials/UnlitMaterialFactory';
 import { customMaterialLayoutDescriptor } from '../../materials/CustomMaterialFactory';
-import type { MaterialType } from '../../materials/MaterialsFactory';
+import type { MaterialType } from '../../materials/materials.types';
 
 type MaterialBindGroupLayoutDescriptorList = Map<MaterialType, GPUBindGroupLayoutDescriptor>;
 
-// Factories require renderer/createUniformBuffer, so expose layout descriptors as static
 const materialBindGroupLayoutDescriptors: MaterialBindGroupLayoutDescriptorList = new Map([
   ['unlit', unlitMaterialLayoutDescriptor],
   ['lambert', lambertMaterialLayoutDescriptor],

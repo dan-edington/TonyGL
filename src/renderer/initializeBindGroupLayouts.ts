@@ -2,7 +2,7 @@ import { cameraBindGroupLayoutDescriptor } from './bindGroupLayouts/camera';
 import { entityBindGroupLayoutDescriptor } from './bindGroupLayouts/entity';
 import { materialBindGroupLayoutDescriptors } from './bindGroupLayouts/materials';
 import { sceneBindGroupLayoutDescriptor } from './bindGroupLayouts/scene';
-import { MaterialType } from '../types';
+import type { MaterialType } from '../materials/materials.types';
 
 function initializeBindGroupLayouts(device: GPUDevice) {
   const cameraBindGroupLayout = device.createBindGroupLayout(cameraBindGroupLayoutDescriptor);

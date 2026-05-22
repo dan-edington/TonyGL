@@ -1,9 +1,8 @@
 import { constants } from '../constants/constants';
 import { colorToLinear, srgbToLinear } from '../utilities/colorUtilities';
-import { Renderer } from '../renderer/configureRenderer';
-import { Entity } from '../core/EntityFactory';
-import { Light } from './LightFactory';
-import { CreateUniformBufferFunction, UniformBuffer } from '../core/UniformBufferFactory';
+import type { DirectionalLightLike, Light, LightManager, SpotLightLike } from './lights.types';
+import type { CreateUniformBufferFunction, Entity, UniformBuffer } from '../core/core.types';
+import type { Renderer } from '../renderer/renderer.types';
 
 export const enum LightFlag {
   None = 0,
@@ -12,33 +11,6 @@ export const enum LightFlag {
   DirectionalLight = 1 << 2,
   SpotLight = 1 << 3,
 }
-
-type DirectionalLightLike = Light & {
-  direction: ArrayLike<number>;
-};
-
-type SpotLightLike = Light & {
-  direction: ArrayLike<number>;
-  angle: number;
-  penumbra: number;
-};
-
-export type LightManager = {
-  lightUniformsBuffer: UniformBuffer | null;
-  ambientLight: {
-    color: Float32Array;
-    intensity: number;
-  };
-  lights: Light[];
-  lightsNeedUpdate: boolean;
-  sceneUniformsBindGroup: GPUBindGroup | null;
-  setAmbientLightColor(color: ArrayLike<number>): void;
-  setAmbientLightIntensity(intensity: number): void;
-  setAmbientLight(ambientLight: { color: ArrayLike<number>; intensity: number }): void;
-  updateLights(rootEntity: Entity): void;
-  createSceneUniformsBindGroup(rendererInstance: Renderer): void;
-  destroy(): void;
-};
 
 function LightManagerFactory(renderer: Renderer, createUniformBuffer: CreateUniformBufferFunction): LightManager {
   let lightsNeedUpdate = true;

@@ -1,29 +1,6 @@
 import { computeBufferLayout, writeUniformValuesToBuffer } from '../utilities/computeBufferLayout';
-import { BufferAddressSpace, UniformValue, UniformValueInput, uuid } from '../types';
-import { Renderer } from '../renderer/configureRenderer';
-
-export type UniformBufferOptions = {
-  addressSpace?: BufferAddressSpace;
-  usage?: GPUBufferUsageFlags;
-};
-
-export type UniformObject = Record<string, UniformValue>;
-
-export type UniformBuffer = {
-  id: uuid;
-  type: string;
-  buffer: GPUBuffer | null;
-  uniforms: Record<string, UniformValue>;
-  bufferData: ArrayBuffer | null;
-  updateUniform(updatedUniforms: Record<string, UniformValueInput>): void;
-  writeUpdatedBufferData(): void;
-  destroy(): void;
-};
-
-export type CreateUniformBufferFunction = (
-  uniformObject: UniformObject,
-  options?: UniformBufferOptions,
-) => UniformBuffer;
+import type { Renderer } from '../renderer/renderer.types';
+import type { UniformObject, UniformBufferOptions, UniformValueInput, UniformBuffer } from './core.types';
 
 function UniformBufferFactory(renderer: Renderer) {
   return function createUniformBuffer(uniformObject: UniformObject, options?: UniformBufferOptions): UniformBuffer {

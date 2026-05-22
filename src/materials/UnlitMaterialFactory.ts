@@ -1,9 +1,8 @@
 import { colorToLinear } from '../utilities/colorUtilities';
-import type { Renderer } from '../renderer/configureRenderer';
-import type { CreateUniformBufferFunction, UniformBuffer } from '../core/UniformBufferFactory';
-import { MaterialFlags } from './MaterialsFactory';
-import type { BaseMaterial } from './MaterialsFactory';
-import { BaseMaterialFactory } from './BaseMaterialFactory';
+import { BaseMaterialFactory, MaterialFlags } from './BaseMaterialFactory';
+import type { CreateUniformBufferFunction, UniformBuffer } from '../core/core.types';
+import type { Renderer } from '../renderer/renderer.types';
+import type { BaseMaterial } from './materials.types';
 
 export type UnlitMaterial = BaseMaterial & {
   color: Float32Array;
@@ -39,7 +38,7 @@ function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUni
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Unlit material sampler not found.');
 
-    const base = createBaseMaterial({
+    const material = createBaseMaterial({
       type: 'unlit',
       shader: 'unlit',
       transparent: options.transparent ?? false,
@@ -51,7 +50,7 @@ function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUni
         textureRepeatAlbedo: { type: 'vec2<f32>', value: albedoTexture.repeat },
         textureRepeatAlpha: { type: 'vec2<f32>', value: alphaTexture.repeat },
       },
-      buildEntries(materialUniformsBuffer: UniformBuffer | null) {
+      buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },
@@ -60,15 +59,15 @@ function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUni
           { binding: 3, resource: sampler },
         ];
       },
-    });
-    base.usesAlphaPipeline = base.transparent || color[3] < 1;
-    const material = base as UnlitMaterial;
+    }) as UnlitMaterial;
+
     material.color = color;
     material.setColor = (value: ArrayLike<number>) => {
       material.color = new Float32Array(value);
       material.updateUniforms({ color: colorToLinear(material.color) });
       material.usesAlphaPipeline = material.transparent || material.color[3] < 1;
     };
+
     return material;
   }
 

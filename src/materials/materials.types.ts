@@ -1,11 +1,4 @@
-import type { UniformBuffer, UniformObject } from '../core/UniformBufferFactory';
-
-export const enum MaterialFlags {
-  None = 0,
-  Alpha = 1 << 0,
-  Normal = 1 << 1,
-  Albedo = 1 << 2,
-}
+import type { UniformBuffer } from '../core/core.types';
 
 export type MaterialType = 'unlit' | 'lambert' | 'normal' | 'blinnphong' | 'custom';
 
@@ -49,11 +42,3 @@ export type LambertMaterial = BaseMaterial & {
 export type NormalMaterial = BaseMaterial;
 
 export type CustomMaterial = BaseMaterial;
-
-export type CustomMaterialOptions = {
-  shader: string;
-  uniforms?: UniformObject;
-  transparent?: boolean;
-  doubleSided?: boolean;
-  depthWrite?: boolean;
-};

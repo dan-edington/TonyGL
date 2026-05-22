@@ -1,21 +1,12 @@
 import { constants } from '../constants/constants';
-import { Renderer } from '../renderer/configureRenderer';
-import { Entity, EntityFactoryFunction, EntityOptions } from '../core/EntityFactory';
-import { Geometry } from '../geometry/GeometryFactory';
-import type { BaseMaterial } from '../materials/MaterialsFactory';
-import { CreateUniformBufferFunction, UniformBuffer } from '../core/UniformBufferFactory';
+import type { EntityFactoryFunction, EntityOptions } from '../core/core.types';
+import type { Geometry } from '../geometry/geometry.types';
+import type { BaseMaterial } from '../materials/materials.types';
+import type { CreateUniformBufferFunction } from '../core/core.types';
+import type { Mesh } from './sceneObjects.types';
+import type { Renderer } from '../renderer/renderer.types';
 
 export type MeshOptions = Omit<EntityOptions, 'type'>;
-
-export type Mesh = Entity & {
-  geometry: Geometry;
-  material: BaseMaterial;
-  pipeline: GPURenderPipeline;
-  entityUniformsBuffer: UniformBuffer;
-  entityUniformsBindGroup: GPUBindGroup;
-  draw(pass: GPURenderPassEncoder, renderer: Renderer): void;
-  destroy(): void;
-};
 
 function MeshFactory(
   renderer: Renderer,

@@ -1,4 +1,4 @@
-import {
+import type {
   BufferAddressSpace,
   ArrayLayout,
   ComputeBufferLayoutOptions,
@@ -9,7 +9,7 @@ import {
   UniformValue,
   UniformValueInput,
   VectorLayout,
-} from '../types';
+} from '../core/core.types';
 
 function computeBufferLayout(
   uniforms: Record<string, UniformValue>,

@@ -1,16 +1,26 @@
 import { describe, expect, it } from 'vitest';
+import { EntityFactory } from '../core/EntityFactory';
+import { SceneFactory } from '../sceneObjects/SceneFactory';
+import type { CreateUniformBufferFunction, Entity, UniformBuffer } from '../core/core.types';
+import type { Renderer } from '../renderer/renderer.types';
+import { Scene } from '../sceneObjects/sceneObjects.types';
 
-import { EntityFactory, type Entity } from '../core/EntityFactory';
-import { SceneFactory, type Scene } from '../sceneObjects/SceneFactory';
-import type { CreateUniformBufferFunction, UniformBuffer } from '../core/UniformBufferFactory';
-import type { Renderer } from '../renderer/configureRenderer';
-
-function createEntity(name: string, options?: { visible?: boolean }): Entity & { destroy: () => void } {
+function createEntity(
+  name: string,
+  options?: { visible?: boolean; drawable?: boolean },
+): Entity & { destroy: () => void } {
   const { entity } = EntityFactory({
     type: 'TestEntity',
     name,
     visible: options?.visible ?? true,
   });
+
+  if (options?.drawable) {
+    Object.assign(entity, {
+      draw() {},
+    });
+  }
+
   return entity;
 }
 
@@ -49,27 +59,33 @@ function createScene(
 function buildSceneFixture() {
   const rootVisibleRenderable = createEntity('root-visible-renderable', {
     visible: true,
+    drawable: true,
   });
   const childVisibleRenderable = createEntity('child-visible-renderable', {
     visible: true,
+    drawable: true,
   });
   const childVisibleNotRenderable = createEntity('child-visible-not-renderable', {
     visible: true,
   });
   const grandchildVisibleRenderable = createEntity('grandchild-visible-renderable', {
     visible: true,
+    drawable: true,
   });
   const hiddenParentRenderable = createEntity('hidden-parent-renderable', {
     visible: false,
+    drawable: true,
   });
   const hiddenBranchChildRenderable = createEntity('hidden-branch-child-renderable', {
     visible: true,
+    drawable: true,
   });
   const secondRootVisibleNotRenderable = createEntity('second-root-visible-not-renderable', {
     visible: true,
   });
   const secondRootChildRenderable = createEntity('second-root-child-renderable', {
     visible: true,
+    drawable: true,
   });
   const secondRootGrandchildHidden = createEntity('second-root-grandchild-hidden', {
     visible: false,
@@ -87,9 +103,7 @@ function buildSceneFixture() {
     expectedRenderListIds: [
       rootVisibleRenderable.id,
       childVisibleRenderable.id,
-      childVisibleNotRenderable.id,
       grandchildVisibleRenderable.id,
-      secondRootVisibleNotRenderable.id,
       secondRootChildRenderable.id,
     ],
   };

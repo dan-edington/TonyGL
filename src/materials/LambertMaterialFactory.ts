@@ -1,14 +1,8 @@
+import { CreateUniformBufferFunction, UniformBuffer } from '../core/core.types';
 import { colorToLinear } from '../utilities/colorUtilities';
-import type { Renderer } from '../renderer/configureRenderer';
-import type { CreateUniformBufferFunction, UniformBuffer } from '../core/UniformBufferFactory';
-import { MaterialFlags } from './MaterialsFactory';
-import type { BaseMaterial } from './MaterialsFactory';
-import { BaseMaterialFactory } from './BaseMaterialFactory';
-
-export type LambertMaterial = BaseMaterial & {
-  color: Float32Array;
-  setColor(value: ArrayLike<number>): void;
-};
+import { BaseMaterialFactory, MaterialFlags } from './BaseMaterialFactory';
+import type { Renderer } from '../renderer/renderer.types';
+import type { LambertMaterial } from './materials.types';
 
 export type LambertMaterialOptions = {
   color?: ArrayLike<number>;
@@ -45,7 +39,7 @@ function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateU
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Lambert material sampler not found.');
 
-    const base = createBaseMaterial({
+    const lambertMaterial = createBaseMaterial({
       type: 'lambert',
       shader: 'lambert',
       transparent: options.transparent ?? false,
@@ -58,7 +52,7 @@ function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateU
         textureRepeatAlpha: { type: 'vec2<f32>', value: alphaTexture.repeat },
         textureRepeatNormal: { type: 'vec2<f32>', value: normalTexture.repeat },
       },
-      buildEntries(materialUniformsBuffer: UniformBuffer | null) {
+      buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },
@@ -68,16 +62,15 @@ function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateU
           { binding: 4, resource: sampler },
         ];
       },
-    });
-    base.usesAlphaPipeline = base.transparent || color[3] < 1;
-    const material = base as LambertMaterial;
-    material.color = color;
-    material.setColor = (value: ArrayLike<number>) => {
-      material.color = new Float32Array(value);
-      material.updateUniforms({ color: colorToLinear(material.color) });
-      material.usesAlphaPipeline = material.transparent || material.color[3] < 1;
+    }) as LambertMaterial;
+
+    lambertMaterial.color = color;
+    lambertMaterial.setColor = (value: ArrayLike<number>) => {
+      lambertMaterial.color = new Float32Array(value);
+      lambertMaterial.updateUniforms({ color: colorToLinear(lambertMaterial.color) });
     };
-    return material;
+
+    return lambertMaterial;
   }
 
   return { createLambertMaterial };

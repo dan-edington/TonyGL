@@ -1,27 +1,5 @@
 import { constants } from '../constants/constants';
-import { Renderer } from './configureRenderer';
-
-type CreateRenderPipelineOptions = {
-  label?: string;
-  shaderModule: GPUShaderModule;
-  shaderEntryPoints?: {
-    vertex: string;
-    fragment: string;
-  };
-  bindGroupLayouts: GPUBindGroupLayout[];
-  vertexBuffers: GPUVertexBufferLayout[];
-  topology?: GPUPrimitiveTopology;
-  cullMode?: GPUCullMode;
-  format?: GPUTextureFormat;
-  blendState?: GPUBlendState;
-  depthStencilState?: GPUDepthStencilState;
-  msaa?: number;
-};
-
-export type PipelineManager = {
-  getOrCreateRenderPipeline(options: CreateRenderPipelineOptions): GPURenderPipeline;
-  clearPipelineCache(): void;
-};
+import type { CreateRenderPipelineOptions, PipelineManager, Renderer } from './renderer.types';
 
 function PipelineManagerFactory(renderer: Renderer): PipelineManager {
   const pipelineCache = new Map<string, GPURenderPipeline>();

@@ -1,57 +1,12 @@
 import { mat4, quat, vec3 } from 'wgpu-matrix';
-import { uuid } from '../types';
-
-export type EntityWithSubscription = {
-  entity: Entity;
-  subscribe: (subscriptionEvent: EntitySubscriptionEvent, subscriptionCallback: EntitySubscriptionCallback) => void;
-};
-
-export type EntityFactoryFunction = (options: EntityOptions) => EntityWithSubscription;
-
-export type EntitySubscriptionEvent =
-  | 'onTransformChanged'
-  | 'onVisibilityChanged'
-  | 'onHierarchyChanged'
-  | 'onMatrixUpdated'
-  | 'onDestroy';
-
-export type EntitySubscriptionCallback = () => void;
-
-export type EntityOptions = {
-  type: string;
-  name?: string;
-  position?: ArrayLike<number>;
-  scale?: ArrayLike<number>;
-  rotation?: ArrayLike<number>;
-  quaternion?: ArrayLike<number>;
-  visible?: boolean;
-};
-
-export type Entity = {
-  id: uuid;
-  type: string;
-  name: string;
-  isLight: boolean;
-  children: Entity[];
-  parent: Entity | null;
-  position: Float32Array;
-  scale: Float32Array;
-  rotation: Float32Array;
-  quaternion: Float32Array;
-  matrix: Float32Array;
-  matrixWorld: Float32Array;
-  visible: boolean;
-  matrixNeedsUpdate: boolean;
-  setPosition(newPosition: ArrayLike<number>): void;
-  setScale(newScale: ArrayLike<number>): void;
-  setRotation(newRotation: ArrayLike<number>): void;
-  setQuaternion(newQuaternion: ArrayLike<number>): void;
-  setVisible(isVisible: boolean): void;
-  add(childrenToAdd: Entity | Entity[]): void;
-  remove(childToRemove: Entity): void;
-  updateMatrix(): void;
-  destroy(): void;
-};
+import type {
+  Entity,
+  EntityOptions,
+  EntityWithSubscription,
+  EntitySubscriptionCallback,
+  EntitySubscriptionEvent,
+  uuid,
+} from './core.types';
 
 function EntityFactory(options: EntityOptions): EntityWithSubscription {
   const id: uuid = crypto.randomUUID();

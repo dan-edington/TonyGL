@@ -1,28 +1,6 @@
 import { LightFlag } from './LightManagerFactory';
-import { Entity, EntityFactoryFunction, EntityOptions } from '../core/EntityFactory';
-
-export type LightOptions = Omit<EntityOptions, 'type'> & {
-  color?: ArrayLike<number>;
-  intensity?: number;
-  range?: number;
-};
-
-export type Light = Entity & {
-  isLight: boolean;
-  flags: LightFlag;
-  color: Float32Array;
-  intensity: number;
-  range: number;
-  setColor(value: ArrayLike<number>): void;
-  setIntensity(value: number): void;
-  setRange(value: number): void;
-};
-
-export type CreateLightBaseFunction = (type: string, options?: LightOptions, flags?: LightFlag) => Light;
-
-export type LightFactoryFunction = ((options?: LightOptions) => Light) & {
-  createLightBase: CreateLightBaseFunction;
-};
+import type { CreateLightBaseFunction, Light, LightFactoryFunction, LightOptions } from './lights.types';
+import type { EntityFactoryFunction } from '../core/core.types';
 
 function LightFactory(entityFactory: EntityFactoryFunction): LightFactoryFunction {
   const createLightBase: CreateLightBaseFunction = (

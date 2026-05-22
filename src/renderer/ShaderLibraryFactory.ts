@@ -1,5 +1,5 @@
-import { uuid } from '../types';
-import { Renderer } from './configureRenderer';
+import type { uuid } from '../core/core.types';
+import type { Renderer } from './renderer.types';
 
 const shaderIncludes: Record<string, string> = import.meta.glob('../shaders/includes/**/*.wgsl', {
   query: '?raw',

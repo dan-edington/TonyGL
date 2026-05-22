@@ -1,6 +1,6 @@
-import { uuid } from '../types';
 import { padArrayToAlignmentBytes } from '../utilities/padArrayToAlignmentBytes';
-import { Renderer } from '../renderer/configureRenderer';
+import type { Renderer } from '../renderer/renderer.types';
+import type { Geometry } from './geometry.types';
 
 export type GeometryOptions = {
   name?: string;
@@ -9,27 +9,6 @@ export type GeometryOptions = {
   normals: Float32Array;
   uvs: Float32Array;
   topology?: GPUPrimitiveTopology;
-};
-
-export type Geometry = {
-  id: uuid;
-  name: string;
-  type: 'Geometry';
-  isIndexed: boolean;
-  indexCount: number;
-  indexFormat: GPUIndexFormat | null;
-  topology: GPUPrimitiveTopology;
-  vertices: Float32Array;
-  indices: Uint16Array | Uint32Array | null;
-  normals: Float32Array;
-  uvs: Float32Array;
-  tangents: Float32Array;
-  vertexBuffer: GPUBuffer | null;
-  indexBuffer: GPUBuffer | null;
-  normalBuffer: GPUBuffer | null;
-  tangentBuffer: GPUBuffer | null;
-  uvBuffer: GPUBuffer | null;
-  destroy: () => void;
 };
 
 function GeometryFactory(renderer: Renderer) {

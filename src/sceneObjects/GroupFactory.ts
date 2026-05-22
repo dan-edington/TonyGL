@@ -1,6 +1,6 @@
-import { Entity, EntityFactoryFunction, EntityOptions } from '../core/EntityFactory';
+import type { EntityFactoryFunction, EntityOptions } from '../core/core.types';
+import type { Group } from './sceneObjects.types';
 
-export type Group = Entity;
 export type GroupOptions = Omit<EntityOptions, 'type'>;
 
 function GroupFactory(entityFactory: EntityFactoryFunction) {

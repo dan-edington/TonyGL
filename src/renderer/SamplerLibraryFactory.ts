@@ -1,24 +1,10 @@
-import { SamplerDescriptorKey } from '../types';
-import { Renderer } from './configureRenderer';
-
-type SamplerConfig = {
-  magFilter?: GPUFilterMode;
-  minFilter?: GPUFilterMode;
-  mipmapFilter?: GPUMipmapFilterMode;
-  addressModeU?: GPUAddressMode;
-  addressModeV?: GPUAddressMode;
-  compare?: GPUCompareFunction;
-};
-
-export type SamplerLibrary = {
-  createSampler(key: SamplerDescriptorKey, config: SamplerConfig): GPUSampler;
-  getSampler(key: SamplerDescriptorKey): GPUSampler | undefined;
-};
+import { SamplerConfig, SamplerLibrary } from './renderer.types';
+import type { Renderer } from './renderer.types';
 
 function SamplerLibraryFactory(renderer: Renderer): SamplerLibrary {
-  const samplers = new Map<SamplerDescriptorKey, GPUSampler>();
+  const samplers = new Map<string, GPUSampler>();
 
-  function createSampler(key: SamplerDescriptorKey, config: SamplerConfig): GPUSampler {
+  function createSampler(key: string, config: SamplerConfig): GPUSampler {
     if (samplers.has(key)) throw new Error(`Sampler with key "${key}" already exists in the library`);
 
     const sampler = renderer.device.createSampler({
@@ -35,7 +21,7 @@ function SamplerLibraryFactory(renderer: Renderer): SamplerLibrary {
     return sampler;
   }
 
-  function getSampler(key: SamplerDescriptorKey): GPUSampler | undefined {
+  function getSampler(key: string): GPUSampler | undefined {
     return samplers.get(key);
   }
 

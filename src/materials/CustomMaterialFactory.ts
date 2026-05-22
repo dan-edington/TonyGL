@@ -1,9 +1,7 @@
-import type { Renderer } from '../renderer/configureRenderer';
-import type { CreateUniformBufferFunction, UniformBuffer, UniformObject } from '../core/UniformBufferFactory';
-import type { BaseMaterial } from './MaterialsFactory';
 import { BaseMaterialFactory } from './BaseMaterialFactory';
-
-export type CustomMaterial = BaseMaterial;
+import type { CreateUniformBufferFunction, UniformBuffer, UniformObject } from '../core/core.types';
+import type { Renderer } from '../renderer/renderer.types';
+import type { CustomMaterial } from './materials.types';
 
 export type CustomMaterialOptions = {
   shader: string;
@@ -17,18 +15,20 @@ function CustomMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
   const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
 
   function createCustomMaterial(options: CustomMaterialOptions): CustomMaterial {
-    return createBaseMaterial({
+    const customMaterial = createBaseMaterial({
       type: 'custom',
       shader: options.shader,
       transparent: options.transparent ?? false,
       doubleSided: options.doubleSided ?? false,
       depthWrite: options.depthWrite ?? true,
       uniforms: options.uniforms,
-      buildEntries(materialUniformsBuffer: UniformBuffer | null) {
+      buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
         if (!materialUniformsBuffer?.buffer) return [];
         return [{ binding: 0, resource: { buffer: materialUniformsBuffer.buffer } }];
       },
     });
+
+    return customMaterial;
   }
 
   return { createCustomMaterial };

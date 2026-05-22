@@ -1,29 +1,13 @@
 import { mat4 } from 'wgpu-matrix';
-import { Renderer } from '../renderer/configureRenderer';
-import { Entity, EntityFactoryFunction, EntityOptions } from '../core/EntityFactory';
-import { CreateUniformBufferFunction, UniformBuffer } from '../core/UniformBufferFactory';
+import type { PerspectiveCamera } from './camera.types';
+import type { CreateUniformBufferFunction, EntityFactoryFunction, EntityOptions } from '../core/core.types';
+import type { Renderer } from '../renderer/renderer.types';
 
 export type PerspectiveCameraOptions = Omit<EntityOptions, 'type'> & {
   near?: number;
   far?: number;
   fov?: number;
   aspect?: number;
-};
-
-export type PerspectiveCamera = Entity & {
-  near: number;
-  far: number;
-  fov: number;
-  aspect: number;
-  projectionMatrix: Float32Array;
-  viewMatrix: Float32Array;
-  viewProjectionMatrix: Float32Array;
-  cameraUniformsBuffer: UniformBuffer;
-  cameraUniformsBindGroup: GPUBindGroup;
-  lookAt(target: ArrayLike<number>, up?: ArrayLike<number>): void;
-  updateCameraUniforms(): void;
-  updateProjectionMatrix(): void;
-  destroy(): void;
 };
 
 function PerspectiveCameraFactory(

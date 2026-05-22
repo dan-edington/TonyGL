@@ -1,13 +1,7 @@
 import { LightFlag } from './LightManagerFactory';
-import { EntityFactoryFunction } from '../core/EntityFactory';
-import { DirectionalLight, DirectionalLightOptions, DirectionalLightFactory } from './DirectionalLightFactory';
-
-export type SpotLight = DirectionalLight & {
-  angle: number;
-  penumbra: number;
-  setAngle(value: number): void;
-  setPenumbra(value: number): void;
-};
+import { DirectionalLightOptions, DirectionalLightFactory } from './DirectionalLightFactory';
+import type { EntityFactoryFunction } from '../core/core.types';
+import type { SpotLight } from './lights.types';
 
 export type SpotLightOptions = DirectionalLightOptions & {
   angle?: number;

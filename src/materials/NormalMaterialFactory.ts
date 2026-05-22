@@ -1,8 +1,7 @@
-import type { Renderer } from '../renderer/configureRenderer';
-import type { CreateUniformBufferFunction, UniformBuffer } from '../core/UniformBufferFactory';
-import { MaterialFlags } from './MaterialsFactory';
-import type { BaseMaterial } from './MaterialsFactory';
-import { BaseMaterialFactory } from './BaseMaterialFactory';
+import { BaseMaterialFactory, MaterialFlags } from './BaseMaterialFactory';
+import type { CreateUniformBufferFunction, UniformBuffer } from '../core/core.types';
+import type { Renderer } from '../renderer/renderer.types';
+import type { BaseMaterial } from './materials.types';
 
 export type NormalMaterial = BaseMaterial;
 
@@ -19,7 +18,8 @@ function NormalMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
     const normalTexture = options.normalTexture ?? renderer.textureLibrary.getFallback('normal');
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Normal material sampler not found.');
-    return createBaseMaterial({
+
+    const normalMaterial = createBaseMaterial({
       type: 'normal',
       shader: 'normal',
       transparent: false,
@@ -28,7 +28,7 @@ function NormalMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
       uniforms: {
         materialFlags: { type: 'u32', value: MaterialFlags.None },
       },
-      buildEntries(materialUniformsBuffer: UniformBuffer | null) {
+      buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },
@@ -37,6 +37,8 @@ function NormalMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
         ];
       },
     });
+
+    return normalMaterial;
   }
 
   return { createNormalMaterial };

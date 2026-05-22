@@ -1,19 +1,19 @@
 import { errorMessages } from '../constants/errorMessages';
-import { Texture, TextureFactory } from '../texture/Texture';
-import { TextureFallback, TextureKey } from '../types';
-import { Renderer } from './configureRenderer';
+import { TextureFactory } from '../texture/Texture';
+import type { Texture, TextureFallback } from '../texture/texture.types';
+import type { Renderer } from './renderer.types';
 
 export type TextureLibrary = {
-  loadTexture(key: TextureKey, url?: string): Promise<Texture>;
-  registerTexture(key: TextureKey, texture: Texture): void;
+  loadTexture(key: string, url?: string): Promise<Texture>;
+  registerTexture(key: string, texture: Texture): void;
   getFallback(textureName: TextureFallback): Texture;
-  getTexture(key: TextureKey): Texture;
+  getTexture(key: string): Texture;
   destroy(): void;
 };
 
 function TextureLibraryFactory(renderer: Renderer): TextureLibrary {
   const TextureLib = TextureFactory();
-  const textures = new Map<TextureKey, Texture>();
+  const textures = new Map<string, Texture>();
 
   const fallbackTextures = {
     white: TextureLib.createSolidColor([255, 255, 255, 255], renderer.device),
@@ -22,7 +22,7 @@ function TextureLibraryFactory(renderer: Renderer): TextureLibrary {
     normal: TextureLib.createSolidColor([128, 128, 255, 255], renderer.device),
   };
 
-  async function loadTexture(key: TextureKey, url?: string): Promise<Texture> {
+  async function loadTexture(key: string, url?: string): Promise<Texture> {
     if (textures.has(key)) {
       throw new Error(`Texture with key "${key}" already exists in the library`);
     }
@@ -43,7 +43,7 @@ function TextureLibraryFactory(renderer: Renderer): TextureLibrary {
     }
   }
 
-  function registerTexture(key: TextureKey, texture: Texture): void {
+  function registerTexture(key: string, texture: Texture): void {
     textures.set(key, texture);
   }
 
@@ -57,7 +57,7 @@ function TextureLibraryFactory(renderer: Renderer): TextureLibrary {
     return fallbackTexture;
   }
 
-  function getTexture(key: TextureKey): Texture {
+  function getTexture(key: string): Texture {
     return textures.get(key) ?? getFallback('white');
   }
 

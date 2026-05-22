@@ -1,10 +1,11 @@
 import { constants } from '../../constants/constants';
-import { Renderer } from '../configureRenderer';
-import { Pass, PassContext, PassOptions, createPass } from './pass';
-import { Scene } from '../../sceneObjects/SceneFactory';
+import { createPass } from './pass';
+import type { Scene } from '../../sceneObjects/sceneObjects.types';
+import type { Pass, PassContext, PassOptions, Renderer } from '../renderer.types';
+import type { DrawableEntity } from '../../core/core.types';
 
 type RenderPassOptions = PassOptions & {
-  drawEntity(entity: unknown, passEncoder: GPURenderPassEncoder, renderer: Renderer): void;
+  drawEntity(entity: DrawableEntity, passEncoder: GPURenderPassEncoder, renderer: Renderer): void;
 };
 
 function createRenderPass(options: RenderPassOptions): Pass {

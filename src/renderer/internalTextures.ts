@@ -1,7 +1,5 @@
 import { constants } from '../constants/constants';
-import { TextureAndView } from './configureRenderer';
-
-type CreateTextureFunction = (device: GPUDevice, canvasTexture: GPUTexture, msaa: number) => TextureAndView;
+import type { CreateTextureFunction } from './renderer.types';
 
 const createDepthTexture: CreateTextureFunction = function (device, canvasTexture, msaa) {
   const depthTexture = device.createTexture({

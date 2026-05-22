@@ -1,34 +1,33 @@
 import { getAdapterInfo } from './renderer/getAdapterInfo';
-import { configureRenderer, Renderer } from './renderer/configureRenderer';
+import { configureRenderer } from './renderer/configureRenderer';
 import { setupRendererEventListeners } from './renderer/setupRendererEventListeners';
 import { PipelineManagerFactory } from './renderer/PipelineManagerFactory';
 import { EntityFactory } from './core/EntityFactory';
-import { PointLightFactory, PointLight, PointLightOptions } from './lights/PointLightFactory';
-import { DirectionalLightFactory, DirectionalLight, DirectionalLightOptions } from './lights/DirectionalLightFactory';
-import { SpotLightFactory, SpotLight, SpotLightOptions } from './lights/SpotLightFactory';
-import { Geometry, GeometryFactory, GeometryOptions } from './geometry/GeometryFactory';
-import { UniformBufferFactory, UniformBufferOptions, UniformObject, UniformBuffer } from './core/UniformBufferFactory';
-import { SceneFactory, Scene, SceneOptions } from './sceneObjects/SceneFactory';
-import {
-  PerspectiveCameraFactory,
-  PerspectiveCamera,
-  PerspectiveCameraOptions,
-} from './camera/PerspectiveCameraFactory';
-import { OrbitControlsFactory, OrbitControls, OrbitControlsOptions } from './camera/OrbitControlsFactory';
-import {
-  BlinnPhongMaterialFactory,
-  BlinnPhongMaterial,
-  BlinnPhongMaterialOptions,
-} from './materials/BlinnPhongMaterialFactory';
-import { LambertMaterialFactory, LambertMaterial, LambertMaterialOptions } from './materials/LambertMaterialFactory';
+import { PointLightFactory, PointLightOptions } from './lights/PointLightFactory';
+import { DirectionalLightFactory, DirectionalLightOptions } from './lights/DirectionalLightFactory';
+import { SpotLightFactory, SpotLightOptions } from './lights/SpotLightFactory';
+import { GeometryFactory, GeometryOptions } from './geometry/GeometryFactory';
+import { UniformBufferFactory } from './core/UniformBufferFactory';
+import { SceneFactory, SceneOptions } from './sceneObjects/SceneFactory';
+import { PerspectiveCameraFactory, PerspectiveCameraOptions } from './camera/PerspectiveCameraFactory';
+import { OrbitControlsFactory, OrbitControlsOptions } from './camera/OrbitControlsFactory';
+import { BlinnPhongMaterialFactory, BlinnPhongMaterialOptions } from './materials/BlinnPhongMaterialFactory';
+import { LambertMaterialFactory, LambertMaterialOptions } from './materials/LambertMaterialFactory';
 import { NormalMaterialFactory, NormalMaterial, NormalMaterialOptions } from './materials/NormalMaterialFactory';
 import { UnlitMaterialFactory, UnlitMaterial, UnlitMaterialOptions } from './materials/UnlitMaterialFactory';
-import { CustomMaterialFactory, CustomMaterial, CustomMaterialOptions } from './materials/CustomMaterialFactory';
-import { MeshFactory, Mesh, MeshOptions } from './sceneObjects/MeshFactory';
+import { CustomMaterialFactory, CustomMaterialOptions } from './materials/CustomMaterialFactory';
+import { MeshFactory, MeshOptions } from './sceneObjects/MeshFactory';
 import { initialiseFrameTimers } from './renderer/frameTimers';
-import { Group, GroupFactory, GroupOptions } from './sceneObjects/GroupFactory';
+import { GroupFactory, GroupOptions } from './sceneObjects/GroupFactory';
+import type { Renderer } from './renderer/renderer.types';
+import type { Group, Mesh, Scene } from './sceneObjects/sceneObjects.types';
+import type { OrbitControls, PerspectiveCamera } from './camera/camera.types';
+import type { DirectionalLight, PointLight, SpotLight } from './lights/lights.types';
+import type { Geometry } from './geometry/geometry.types';
+import type { BlinnPhongMaterial, CustomMaterial, LambertMaterial } from './materials/materials.types';
+import type { UniformBuffer, UniformBufferOptions, UniformObject } from './core/core.types';
 
-export type RendererOptions = {
+export type TonyOptions = {
   containerElement?: HTMLElement;
   dpr?: number;
   alpha?: boolean;
@@ -62,7 +61,7 @@ export type Tony = {
   destroy: () => void;
 };
 
-async function TonyGL(options: RendererOptions): Promise<Tony> {
+async function TonyGL(options: TonyOptions): Promise<Tony> {
   // Setup Renderer
   const renderer = await configureRenderer(options);
   const frameTimers = initialiseFrameTimers();

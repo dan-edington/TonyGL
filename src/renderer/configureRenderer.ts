@@ -1,54 +1,18 @@
 import { errorMessages } from '../constants/errorMessages';
 import { initializeBindGroupLayouts } from './initializeBindGroupLayouts';
 import { createDepthTexture, createMultiSampleTexture } from './internalTextures';
-import { PipelineManagerFactory, PipelineManager } from './PipelineManagerFactory';
-import { PassManagerFactory, PassManager } from './PassManagerFactory';
-import { SamplerLibraryFactory, SamplerLibrary } from './SamplerLibraryFactory';
-import { TextureLibraryFactory, TextureLibrary } from './TextureLibraryFactory';
-import { ShaderLibraryFactory, ShaderLibrary } from './ShaderLibraryFactory';
+import { PipelineManagerFactory } from './PipelineManagerFactory';
+import { PassManagerFactory } from './PassManagerFactory';
+import { SamplerLibraryFactory } from './SamplerLibraryFactory';
+import { TextureLibraryFactory } from './TextureLibraryFactory';
+import { ShaderLibraryFactory } from './ShaderLibraryFactory';
 import { createRenderPass } from './passes/renderPass';
 import { createPostProcessingPass } from './passes/postProcessingPass';
-import type { RendererOptions } from '../TonyGL';
+import type { TonyOptions } from '../TonyGL';
+import type { Renderer } from './renderer.types';
+import type { DrawableEntity } from '../core/core.types';
 
-export type TextureAndView = {
-  texture: GPUTexture;
-  view: GPUTextureView;
-};
-
-export type Renderer = {
-  containerElement: HTMLElement;
-  canvasElement: HTMLCanvasElement;
-  context: GPUCanvasContext;
-  device: GPUDevice;
-  adapter: GPUAdapter;
-  presentationFormat: GPUTextureFormat;
-  canvasTexture: GPUTexture;
-  multiSampleTexture: TextureAndView;
-  depthTexture: TextureAndView;
-  msaa: number;
-  alpha: boolean;
-  dpr: number;
-  bindGroupLayouts: {
-    cameraBindGroupLayout: GPUBindGroupLayout;
-    sceneBindGroupLayout: GPUBindGroupLayout;
-    entityBindGroupLayout: GPUBindGroupLayout;
-    materialBindGroupLayouts: Map<string, GPUBindGroupLayout>;
-  };
-  pipelineManager: PipelineManager;
-  passManager: PassManager;
-  passOrder: string[];
-  samplerLibrary: SamplerLibrary;
-  textureLibrary: TextureLibrary;
-  shaderLibrary: ShaderLibrary;
-  timers: {
-    currentTime: number;
-    currentFrame: number;
-    elapsedTime: number;
-    deltaTime: number;
-  };
-};
-
-async function configureRenderer(options: RendererOptions): Promise<Renderer> {
+async function configureRenderer(options: TonyOptions): Promise<Renderer> {
   const containerElement = options.containerElement ?? document.body;
   const dpr = options.dpr ?? window.devicePixelRatio;
   const alpha = options.alpha ?? false;
@@ -92,7 +56,7 @@ async function configureRenderer(options: RendererOptions): Promise<Renderer> {
     deltaTime: 0,
   };
 
-  const baseRenderer = {
+  const renderer = {
     containerElement,
     canvasElement,
     context,
@@ -114,20 +78,20 @@ async function configureRenderer(options: RendererOptions): Promise<Renderer> {
     timers,
   } as Renderer;
 
-  const activePipelineManager = PipelineManagerFactory(baseRenderer);
-  const createPassManager = PassManagerFactory(baseRenderer);
-  const activePassManager = createPassManager();
+  const activePipelineManager = PipelineManagerFactory(renderer);
+  const createPassManager = PassManagerFactory(renderer);
+  const passManager = createPassManager();
 
-  const samplerLibrary = SamplerLibraryFactory(baseRenderer);
-  const textureLibrary = TextureLibraryFactory(baseRenderer);
-  const shaderLibrary = ShaderLibraryFactory(baseRenderer);
+  const samplerLibrary = SamplerLibraryFactory(renderer);
+  const textureLibrary = TextureLibraryFactory(renderer);
+  const shaderLibrary = ShaderLibraryFactory(renderer);
 
-  baseRenderer.pipelineManager = activePipelineManager;
-  baseRenderer.passManager = activePassManager;
-  baseRenderer.passOrder = ['render', 'postprocessing'];
-  baseRenderer.samplerLibrary = samplerLibrary;
-  baseRenderer.textureLibrary = textureLibrary;
-  baseRenderer.shaderLibrary = shaderLibrary;
+  renderer.pipelineManager = activePipelineManager;
+  renderer.passManager = passManager;
+  renderer.passOrder = ['render', 'postprocessing'];
+  renderer.samplerLibrary = samplerLibrary;
+  renderer.textureLibrary = textureLibrary;
+  renderer.shaderLibrary = shaderLibrary;
 
   const postProcessingShader = shaderLibrary.getShader('postprocessing');
   if (!postProcessingShader) throw new Error(errorMessages.missingShaderCode);
@@ -135,19 +99,13 @@ async function configureRenderer(options: RendererOptions): Promise<Renderer> {
   const linearClampSampler = samplerLibrary.getSampler('linearClamp');
   if (!linearClampSampler) throw new Error(errorMessages.missingSamplerLibraryDevice);
 
-  activePassManager.registerPass(
+  passManager.registerPass(
     'render',
     (passOptions) =>
       createRenderPass({
         ...passOptions,
-        drawEntity(entity, passEncoder, rendererInstance) {
-          const drawableEntity = entity as {
-            draw?: (pass: GPURenderPassEncoder, renderer: Renderer) => void;
-          };
-
-          if (drawableEntity.draw) {
-            drawableEntity.draw(passEncoder, rendererInstance);
-          }
+        drawEntity(entity: DrawableEntity, passEncoder: GPURenderPassEncoder, rendererInstance: Renderer) {
+          entity.draw(passEncoder, rendererInstance);
         },
       }),
     {
@@ -157,7 +115,7 @@ async function configureRenderer(options: RendererOptions): Promise<Renderer> {
     },
   );
 
-  activePassManager.registerPass(
+  passManager.registerPass(
     'postprocessing',
     (passOptions) =>
       createPostProcessingPass({
@@ -172,7 +130,7 @@ async function configureRenderer(options: RendererOptions): Promise<Renderer> {
     },
   );
 
-  return baseRenderer;
+  return renderer;
 }
 
 export { configureRenderer };

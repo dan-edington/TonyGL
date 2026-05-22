@@ -1,4 +1,4 @@
-import type { BigIntTypedArray, NumericTypedArray } from '../types';
+import type { BigIntTypedArray, NumericTypedArray } from '../core/core.types';
 
 const BYTES_PER_ELEMENT = new Map<any, number>([
   [Int8Array, 1],

@@ -1,44 +1,17 @@
-import { uuid } from '../types';
-
-export type TextureColorSpace = 'srgb' | 'linear' | 'data';
-
-export interface TextureSubscriber {
-  id: uuid;
-  onTextureUpdate(texture: Texture): void;
-}
+import type { uuid } from '../core/core.types';
+import type {
+  TextureColorSpace,
+  Texture,
+  TextureSubscriber,
+  CreateSolidColorTexture,
+  CreateTextureFromImageBitmap,
+} from './texture.types';
 
 export type TextureOptions = {
   width: number;
   height: number;
   colorSpace?: TextureColorSpace;
 };
-
-export interface Texture {
-  id: uuid;
-  gpuTexture: GPUTexture | null;
-  width: number;
-  height: number;
-  format: GPUTextureFormat;
-  repeat: Float32Array;
-  colorSpace: TextureColorSpace;
-  isInitialized: boolean;
-  getView(): GPUTextureView;
-  destroy(): void;
-  subscribe(subscriber: TextureSubscriber): void;
-  unsubscribe(id: uuid): void;
-}
-
-type CreateTextureFromImageBitmap = (
-  imageBitmap: ImageBitmap,
-  device: GPUDevice,
-  colorSpace?: TextureColorSpace,
-) => Texture;
-
-type CreateSolidColorTexture = (
-  color: [number, number, number, number],
-  device: GPUDevice,
-  colorSpace?: TextureColorSpace,
-) => Texture;
 
 function TextureFactory() {
   function createTexture(options: TextureOptions): Texture {

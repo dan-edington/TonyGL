@@ -1,8 +1,7 @@
+import { LightFactory } from './LightFactory';
 import { LightFlag } from './LightManagerFactory';
-import { EntityFactoryFunction } from '../core/EntityFactory';
-import { Light, LightFactory, LightOptions } from './LightFactory';
-
-export type PointLight = Light;
+import type { EntityFactoryFunction } from '../core/core.types';
+import type { LightOptions, PointLight } from './lights.types';
 
 export type PointLightOptions = LightOptions;
 

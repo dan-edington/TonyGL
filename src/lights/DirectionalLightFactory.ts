@@ -1,11 +1,7 @@
 import { LightFlag } from './LightManagerFactory';
-import { EntityFactoryFunction } from '../core/EntityFactory';
-import { Light, LightFactory, LightOptions } from './LightFactory';
-
-export type DirectionalLight = Light & {
-  direction: Float32Array;
-  setDirection(value: ArrayLike<number>): void;
-};
+import { LightFactory } from './LightFactory';
+import type { DirectionalLight, LightOptions } from './lights.types';
+import type { EntityFactoryFunction } from '../core/core.types';
 
 export type DirectionalLightOptions = LightOptions & {
   direction?: ArrayLike<number>;
