@@ -1,12 +1,12 @@
 import '../style.css';
 
-import { Renderer } from '../../src/index';
+import { getAdapterInfo } from '../../src/TonyGL';
 
 const container = document.getElementById('app');
 
 if (container) {
   // Create and init the renderer
-  const { limits, features, info } = await Renderer.getAdapterInfo();
+  const { limits, features, info } = await getAdapterInfo();
 
   const featuresList = document.getElementById('featuresList')!;
   const limitsList = document.getElementById('limitsList')!;

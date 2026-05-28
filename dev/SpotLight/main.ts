@@ -3,16 +3,7 @@ import { plane } from 'primitive-geometry';
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 
-import {
-  Geometry,
-  Mesh,
-  Renderer,
-  Scene,
-  PerspectiveCamera,
-  OrbitControls,
-  LambertMaterial,
-  SpotLight,
-} from '../../src/index';
+import { TonyGL } from '../../src';
 
 const container = document.getElementById('app');
 
@@ -20,24 +11,19 @@ const pane = new Pane();
 pane.registerPlugin(EssentialsPlugin);
 
 if (container) {
-  // Create and init the renderer
-  const renderer = await Renderer.create({ containerElement: container, alpha: true });
-
-  // Create a scene
-  const scene = new Scene();
+  const tony = await TonyGL({ containerElement: container, alpha: true });
+  const scene = tony.createScene();
   scene.setClearColor([0.25, 0.25, 0.25, 1]);
 
-  // Create a camera
-  const camera = new PerspectiveCamera({
+  const camera = tony.createPerspectiveCamera({
     near: 0.1,
     far: 100,
     fov: (60 * Math.PI) / 180,
     aspect: container.clientWidth / container.clientHeight,
   });
 
-  // Create cube geometry
   const planePrimitive = plane({ sx: 5, sy: 5 });
-  const planeGeometry = new Geometry({
+  const planeGeometry = tony.createGeometry({
     vertices: planePrimitive.positions,
     indices: Uint16Array.from(planePrimitive.cells),
     normals: planePrimitive.normals,
@@ -63,7 +49,7 @@ if (container) {
     intensity: 0,
   };
 
-  const spotLight = new SpotLight({
+  const spotLight = tony.createSpotLight({
     position: [lightParams.position.x, lightParams.position.y, lightParams.position.z],
     direction: [lightParams.direction.x, lightParams.direction.y, lightParams.direction.z],
     angle: lightParams.angle,
@@ -71,9 +57,10 @@ if (container) {
     color: [lightParams.color.r, lightParams.color.g, lightParams.color.b, lightParams.color.a],
     intensity: lightParams.intensity,
   });
-  spotLight.position = [lightParams.position.x, lightParams.position.y, lightParams.position.z];
+  spotLight.setPosition([lightParams.position.x, lightParams.position.y, lightParams.position.z]);
+  spotLight.visible = lightParams.visible;
 
-  const lambertMaterial = new LambertMaterial({
+  const lambertMaterial = tony.createLambertMaterial({
     transparent: true,
     color: [
       lambertMaterialParams.color.r,
@@ -83,9 +70,8 @@ if (container) {
     ],
   });
 
-  const sphereMesh = new Mesh(planeGeometry, lambertMaterial);
+  const sphereMesh = tony.createMesh(planeGeometry, lambertMaterial);
 
-  // Add objects to scene
   scene.add([sphereMesh, spotLight]);
 
   scene.setAmbientLightColor([
@@ -97,19 +83,17 @@ if (container) {
 
   scene.setAmbientLightIntensity(ambientParams.intensity);
 
-  camera.position = [0, 0, 5];
-  camera.lookAt(new Float32Array([0, 0, 0]));
-  new OrbitControls({ camera, domElement: renderer.surfaceManager.canvasElement });
+  camera.setPosition([0, 0, 5]);
+  camera.lookAt([0, 0, 0]);
+  tony.createOrbitControls({ camera, domElement: tony.renderer.canvasElement });
 
-  // Render the scene
   function render() {
-    renderer.render(scene, camera);
+    tony.render(scene, camera);
     requestAnimationFrame(render);
   }
 
   render();
 
-  // Add resize handler for camera
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
   });
@@ -119,8 +103,7 @@ if (container) {
 
   lambertMaterialFolder.addBinding(lambertMaterialParams, 'color', { color: { type: 'float' } }).on('change', () => {
     const value = lambertMaterialParams.color;
-    const newColor = [value.r, value.g, value.b, value.a];
-    lambertMaterial.color = newColor;
+    lambertMaterial.setColor([value.r, value.g, value.b, value.a]);
   });
 
   const lightFolder = paneApi.addFolder ? paneApi.addFolder({ title: 'Light' }) : paneApi;
@@ -128,56 +111,56 @@ if (container) {
   // Color
   lightFolder.addBinding(lightParams, 'color', { color: { type: 'float' } }).on('change', () => {
     const value = lightParams.color;
-    spotLight.color = [value.r, value.g, value.b, value.a];
+    spotLight.setColor([value.r, value.g, value.b, value.a]);
   });
 
   // Intensity
   lightFolder.addBinding(lightParams, 'intensity', { min: 0, max: 30, step: 0.01 }).on('change', () => {
-    spotLight.intensity = lightParams.intensity;
+    spotLight.setIntensity(lightParams.intensity);
   });
 
   // Position with custom labels
   lightFolder
     .addBinding(lightParams.position, 'x', { min: -10, max: 10, step: 0.01, label: 'pos x' })
     .on('change', () => {
-      spotLight.position = [lightParams.position.x, lightParams.position.y, lightParams.position.z];
+      spotLight.setPosition([lightParams.position.x, lightParams.position.y, lightParams.position.z]);
     });
   lightFolder
     .addBinding(lightParams.position, 'y', { min: -10, max: 10, step: 0.01, label: 'pos y' })
     .on('change', () => {
-      spotLight.position = [lightParams.position.x, lightParams.position.y, lightParams.position.z];
+      spotLight.setPosition([lightParams.position.x, lightParams.position.y, lightParams.position.z]);
     });
   lightFolder
     .addBinding(lightParams.position, 'z', { min: -10, max: 10, step: 0.01, label: 'pos z' })
     .on('change', () => {
-      spotLight.position = [lightParams.position.x, lightParams.position.y, lightParams.position.z];
+      spotLight.setPosition([lightParams.position.x, lightParams.position.y, lightParams.position.z]);
     });
 
   // Direction with custom labels
   lightFolder
     .addBinding(lightParams.direction, 'x', { min: -1, max: 1, step: 0.01, label: 'dir x' })
     .on('change', () => {
-      spotLight.direction = [lightParams.direction.x, lightParams.direction.y, lightParams.direction.z];
+      spotLight.setDirection([lightParams.direction.x, lightParams.direction.y, lightParams.direction.z]);
     });
   lightFolder
     .addBinding(lightParams.direction, 'y', { min: -1, max: 1, step: 0.01, label: 'dir y' })
     .on('change', () => {
-      spotLight.direction = [lightParams.direction.x, lightParams.direction.y, lightParams.direction.z];
+      spotLight.setDirection([lightParams.direction.x, lightParams.direction.y, lightParams.direction.z]);
     });
   lightFolder
     .addBinding(lightParams.direction, 'z', { min: -1, max: 1, step: 0.01, label: 'dir z' })
     .on('change', () => {
-      spotLight.direction = [lightParams.direction.x, lightParams.direction.y, lightParams.direction.z];
+      spotLight.setDirection([lightParams.direction.x, lightParams.direction.y, lightParams.direction.z]);
     });
 
   // Angle (outer cone)
   lightFolder.addBinding(lightParams, 'angle', { min: 0, max: Math.PI / 2, step: 0.01 }).on('change', () => {
-    spotLight.angle = lightParams.angle;
+    spotLight.setAngle(lightParams.angle);
   });
 
   // Penumbra
   lightFolder.addBinding(lightParams, 'penumbra', { min: 0, max: 1, step: 0.01 }).on('change', () => {
-    spotLight.penumbra = lightParams.penumbra;
+    spotLight.setPenumbra(lightParams.penumbra);
   });
 
   // Visible
