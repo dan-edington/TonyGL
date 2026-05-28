@@ -14,7 +14,6 @@ export type Renderer = {
   device: GPUDevice;
   adapter: GPUAdapter;
   presentationFormat: GPUTextureFormat;
-  canvasTexture: GPUTexture;
   multiSampleTexture: TextureAndView;
   depthTexture: TextureAndView;
   msaa: number;
@@ -126,4 +125,8 @@ export type PassManager = {
   destroyRenderTargets(): void;
 };
 
-export type CreateTextureFunction = (device: GPUDevice, canvasTexture: GPUTexture, msaa: number) => TextureAndView;
+export type CreateTextureFunction = (
+  device: GPUDevice,
+  canvasElement: HTMLCanvasElement,
+  msaa: number,
+) => TextureAndView;

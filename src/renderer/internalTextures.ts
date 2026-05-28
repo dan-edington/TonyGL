@@ -1,11 +1,11 @@
 import { constants } from '../constants/constants';
 import type { CreateTextureFunction } from './renderer.types';
 
-const createDepthTexture: CreateTextureFunction = function (device, canvasTexture, msaa) {
+const createDepthTexture: CreateTextureFunction = function (device, canvasElement, msaa) {
   const depthTexture = device.createTexture({
     format: 'depth24plus',
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    size: [canvasTexture.width, canvasTexture.height],
+    size: [canvasElement.width, canvasElement.height],
     sampleCount: msaa,
   });
 
@@ -17,11 +17,11 @@ const createDepthTexture: CreateTextureFunction = function (device, canvasTextur
   };
 };
 
-const createMultiSampleTexture: CreateTextureFunction = function (device, canvasTexture, msaa) {
+const createMultiSampleTexture: CreateTextureFunction = function (device, canvasElement, msaa) {
   const multiSampleTexture = device.createTexture({
     format: constants.INTERNAL_COLOR_FORMAT,
     usage: GPUTextureUsage.RENDER_ATTACHMENT,
-    size: [canvasTexture.width, canvasTexture.height],
+    size: [canvasElement.width, canvasElement.height],
     sampleCount: msaa,
   });
 

@@ -42,9 +42,8 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer> {
     alphaMode: alpha ? 'premultiplied' : 'opaque',
   });
 
-  const canvasTexture = context.getCurrentTexture();
-  const multiSampleTexture = createMultiSampleTexture(device, canvasTexture, msaa);
-  const depthTexture = createDepthTexture(device, canvasTexture, msaa);
+  const multiSampleTexture = createMultiSampleTexture(device, canvasElement, msaa);
+  const depthTexture = createDepthTexture(device, canvasElement, msaa);
 
   const { cameraBindGroupLayout, sceneBindGroupLayout, entityBindGroupLayout, materialBindGroupLayouts } =
     initializeBindGroupLayouts(device);
@@ -63,7 +62,6 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer> {
     device,
     adapter,
     presentationFormat,
-    canvasTexture,
     multiSampleTexture,
     depthTexture,
     msaa,
