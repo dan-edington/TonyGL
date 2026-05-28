@@ -7,13 +7,16 @@ export type TextureAndView = {
   view: GPUTextureView;
 };
 
-export type Renderer = {
+export type WebGPUBase = {
   containerElement: HTMLElement;
   canvasElement: HTMLCanvasElement;
   context: GPUCanvasContext;
   device: GPUDevice;
   adapter: GPUAdapter;
   presentationFormat: GPUTextureFormat;
+};
+
+export type Renderer = WebGPUBase & {
   multiSampleTexture: TextureAndView;
   depthTexture: TextureAndView;
   msaa: number;

@@ -8,15 +8,15 @@ import { TextureLibraryFactory } from './TextureLibraryFactory';
 import { ShaderLibraryFactory } from './ShaderLibraryFactory';
 import { createRenderPass } from './passes/renderPass';
 import { createPostProcessingPass } from './passes/postProcessingPass';
-import type { TonyOptions } from '../TonyGL';
-import type { Renderer } from './renderer.types';
+import type { Renderer, WebGPUBase } from './renderer.types';
 import type { DrawableEntity } from '../core/core.types';
+import type { TonyFullOptions, TonyOptions, TonySetupOnlyOptions } from '../TonyGL.types';
 
-async function configureRenderer(options: TonyOptions): Promise<Renderer> {
+function configureRenderer(options: TonySetupOnlyOptions): Promise<WebGPUBase>;
+function configureRenderer(options: TonyFullOptions): Promise<Renderer>;
+async function configureRenderer(options: TonyOptions): Promise<Renderer | WebGPUBase> {
   const containerElement = options.containerElement ?? document.body;
-  const dpr = options.dpr ?? window.devicePixelRatio;
   const alpha = options.alpha ?? false;
-  const msaa = options.multiSampling ?? 4;
 
   const canvasElement = document.createElement('canvas');
   containerElement.appendChild(canvasElement);
@@ -42,6 +42,22 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer> {
     alphaMode: alpha ? 'premultiplied' : 'opaque',
   });
 
+  const webGPUBase: WebGPUBase = {
+    containerElement,
+    canvasElement,
+    context,
+    device,
+    adapter,
+    presentationFormat,
+  };
+
+  if (options.webGPUSetupOnly) {
+    return webGPUBase;
+  }
+
+  const dpr = options.dpr ?? window.devicePixelRatio;
+  const msaa = options.multiSampling ?? 4;
+
   const multiSampleTexture = createMultiSampleTexture(device, canvasElement, msaa);
   const depthTexture = createDepthTexture(device, canvasElement, msaa);
 
@@ -56,12 +72,7 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer> {
   };
 
   const renderer = {
-    containerElement,
-    canvasElement,
-    context,
-    device,
-    adapter,
-    presentationFormat,
+    ...webGPUBase,
     multiSampleTexture,
     depthTexture,
     msaa,
