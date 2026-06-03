@@ -10,18 +10,21 @@ import type { WebGPUBase } from './renderer/renderer.types';
 import type { Scene } from './sceneObjects/sceneObjects.types';
 import type { PerspectiveCamera } from './camera/camera.types';
 import type {
-  Tony,
   TonyFullOptions,
   TonyModule,
   TonyModuleContext,
-  TonyOptions,
   TonySetupOnlyOptions,
+  TonyWithModules,
 } from './TonyGL.types';
 import { initializeMaterialBindGroupLayouts } from './renderer/initializeBindGroupLayouts';
 
 function TonyGL(options: TonySetupOnlyOptions): Promise<WebGPUBase>;
-function TonyGL(options: TonyFullOptions): Promise<Tony>;
-async function TonyGL(options: TonyOptions): Promise<Tony | WebGPUBase> {
+function TonyGL<const M extends readonly ((context: TonyModuleContext) => TonyModule)[]>(
+  options: TonyFullOptions<M>,
+): Promise<TonyWithModules<M>>;
+async function TonyGL<const M extends readonly ((context: TonyModuleContext) => TonyModule)[]>(
+  options: TonySetupOnlyOptions | TonyFullOptions<M>,
+): Promise<WebGPUBase | TonyWithModules<M>> {
   if (options.webGPUSetupOnly) {
     return await configureRenderer(options);
   }
@@ -98,7 +101,7 @@ async function TonyGL(options: TonyOptions): Promise<Tony | WebGPUBase> {
     destroy,
   };
 
-  const output = Object.assign(coreModules, ...installModules());
+  const output = Object.assign(coreModules, ...installModules()) as TonyWithModules<M>;
 
   return output;
 }

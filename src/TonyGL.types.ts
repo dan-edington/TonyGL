@@ -10,7 +10,9 @@ import { MaterialType } from './materials/materials.types';
 import { Renderer } from './renderer/renderer.types';
 import { Scene } from './sceneObjects/sceneObjects.types';
 
-export type TonyFullOptions = {
+type UnionToIntersection<U> = (U extends unknown ? (arg: U) => void : never) extends (arg: infer I) => void ? I : never;
+
+export type TonyFullOptions<M extends readonly TonyModuleFactory[] = readonly TonyModuleFactory[]> = {
   webGPUSetupOnly?: false;
   containerElement?: HTMLElement;
   dpr?: number;
@@ -18,7 +20,7 @@ export type TonyFullOptions = {
   multiSampling?: number;
   requiredFeatures?: GPUFeatureName[];
   requiredLimits?: Record<string, number>;
-  modules?: TonyModuleFactory[];
+  modules?: M;
 };
 
 export type TonySetupOnlyOptions = {
@@ -33,7 +35,7 @@ export type TonySetupOnlyOptions = {
 
 export type TonyModuleFactory = (context: TonyModuleContext) => TonyModule;
 
-export type TonyModule = Record<string, any>;
+export type TonyModule = Record<string, unknown>;
 
 export type TonyModuleContext = {
   renderer: Renderer;
@@ -42,7 +44,9 @@ export type TonyModuleContext = {
   registerMaterialLayoutDescriptor: (name: MaterialType, descriptor: GPUBindGroupLayoutDescriptor) => void;
 };
 
-export type TonyOptions = TonyFullOptions | TonySetupOnlyOptions;
+export type TonyOptions<M extends readonly TonyModuleFactory[] = readonly TonyModuleFactory[]> =
+  | TonyFullOptions<M>
+  | TonySetupOnlyOptions;
 
 export type Tony = {
   renderer: Renderer;
@@ -50,3 +54,7 @@ export type Tony = {
   render: (scene: Scene, camera: PerspectiveCamera) => void;
   destroy: () => void;
 };
+
+export type ModulesToObject<M extends readonly TonyModuleFactory[]> = UnionToIntersection<ReturnType<M[number]>>;
+
+export type TonyWithModules<M extends readonly TonyModuleFactory[]> = Tony & ModulesToObject<M>;
