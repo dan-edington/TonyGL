@@ -1,7 +1,7 @@
 import { BaseMaterialFactory } from './BaseMaterialFactory';
-import type { CreateUniformBufferFunction, UniformBuffer, UniformObject } from '../core/core.types';
-import type { Renderer } from '../renderer/renderer.types';
-import type { CustomMaterial } from './materials.types';
+import type { UniformBuffer, UniformObject } from '../core/core.types';
+import type { CustomMaterial as CustomMaterialType } from './materials.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
 export type CustomMaterialOptions = {
   shader: string;
@@ -11,11 +11,20 @@ export type CustomMaterialOptions = {
   depthWrite?: boolean;
 };
 
-function CustomMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUniformBufferFunction) {
+function CustomMaterial(context: TonyModuleContext) {
+  const { renderer, registerMaterialLayoutDescriptor, createUniformBuffer } = context;
+
   const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
 
-  function createCustomMaterial(options: CustomMaterialOptions): CustomMaterial {
-    const customMaterial = createBaseMaterial<CustomMaterial>({
+  const customMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
+    label: 'CustomMaterial Bind Group Layout',
+    entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
+  };
+
+  registerMaterialLayoutDescriptor('custom', customMaterialLayoutDescriptor);
+
+  function createCustomMaterial(options: CustomMaterialOptions): CustomMaterialType {
+    const customMaterial = createBaseMaterial<CustomMaterialType>({
       type: 'custom',
       shader: options.shader,
       transparent: options.transparent ?? false,
@@ -34,9 +43,4 @@ function CustomMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
   return { createCustomMaterial };
 }
 
-const customMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
-  label: 'CustomMaterial Bind Group Layout',
-  entries: [{ binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }],
-};
-
-export { CustomMaterialFactory, customMaterialLayoutDescriptor };
+export { CustomMaterial };

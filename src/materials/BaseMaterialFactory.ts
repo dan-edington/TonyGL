@@ -32,7 +32,7 @@ export function BaseMaterialFactory(renderer: Renderer, createUniformBuffer: Cre
       throw new Error('Could not find shader code for material.');
     }
 
-    const materialBindGroupLayout = renderer.bindGroupLayouts.materialBindGroupLayouts.get(type);
+    const materialBindGroupLayout = renderer.bindGroupLayouts.materialBindGroupLayouts?.get(type);
     if (!materialBindGroupLayout) {
       throw new Error(`Material bind group layout missing for type: ${type}`);
     }

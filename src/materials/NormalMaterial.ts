@@ -1,9 +1,7 @@
 import { BaseMaterialFactory, MaterialFlags } from './BaseMaterialFactory';
-import type { CreateUniformBufferFunction, UniformBuffer } from '../core/core.types';
-import type { Renderer } from '../renderer/renderer.types';
-import type { BaseMaterial } from './materials.types';
-
-export type NormalMaterial = BaseMaterial;
+import type { UniformBuffer } from '../core/core.types';
+import type { NormalMaterial as NormalMaterialType } from './materials.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
 export type NormalMaterialOptions = {
   normalTexture?: any | null;
@@ -11,10 +9,23 @@ export type NormalMaterialOptions = {
   depthWrite?: boolean;
 };
 
-function NormalMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUniformBufferFunction) {
+function NormalMaterial(context: TonyModuleContext) {
+  const { renderer, createUniformBuffer, registerMaterialLayoutDescriptor } = context;
+
   const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
 
-  function createNormalMaterial(options: NormalMaterialOptions = {}): NormalMaterial {
+  const normalMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
+    label: 'NormalMaterial Bind Group Layout',
+    entries: [
+      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
+    ],
+  };
+
+  registerMaterialLayoutDescriptor('normal', normalMaterialLayoutDescriptor);
+
+  function createNormalMaterial(options: NormalMaterialOptions = {}): NormalMaterialType {
     const normalTexture = options.normalTexture ?? renderer.textureLibrary.getFallback('normal');
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Normal material sampler not found.');
@@ -25,7 +36,7 @@ function NormalMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
       materialFlags |= MaterialFlags.Normal;
     }
 
-    const self = createBaseMaterial<NormalMaterial>({
+    const self = createBaseMaterial<NormalMaterialType>({
       type: 'normal',
       shader: 'normal',
       transparent: false,
@@ -50,13 +61,4 @@ function NormalMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUn
   return { createNormalMaterial };
 }
 
-const normalMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
-  label: 'NormalMaterial Bind Group Layout',
-  entries: [
-    { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-    { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    { binding: 2, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
-  ],
-};
-
-export { NormalMaterialFactory, normalMaterialLayoutDescriptor };
+export { NormalMaterial };

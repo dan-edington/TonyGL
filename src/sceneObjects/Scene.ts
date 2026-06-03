@@ -1,24 +1,16 @@
 import { errorMessages } from '../constants/errorMessages';
 import { srgbToLinear } from '../utilities/colorUtilities';
 import { LightManagerFactory } from '../lights/LightManagerFactory';
-import type {
-  CreateUniformBufferFunction,
-  DrawableEntity,
-  Entity,
-  EntityFactoryFunction,
-  EntityOptions,
-} from '../core/core.types';
+import type { DrawableEntity, Entity, EntityOptions } from '../core/core.types';
 import type { Scene } from './sceneObjects.types';
-import type { Renderer } from '../renderer/renderer.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
 export type SceneOptions = Omit<EntityOptions, 'type'>;
 
-function SceneFactory(
-  renderer: Renderer,
-  entityFactory: EntityFactoryFunction,
-  createUniformBuffer: CreateUniformBufferFunction,
-) {
-  return function createScene(options: SceneOptions = {}): Scene {
+function Scene(context: TonyModuleContext) {
+  const { renderer, entityFactory, createUniformBuffer } = context;
+
+  function createScene(options: SceneOptions = {}): Scene {
     const { entity: self, subscribe } = entityFactory<Scene>({ ...options, type: 'Scene' });
 
     const sceneUniformsBuffer = createUniformBuffer({
@@ -109,7 +101,11 @@ function SceneFactory(
     self.updateLights = updateLights;
 
     return self;
+  }
+
+  return {
+    createScene,
   };
 }
 
-export { SceneFactory };
+export { Scene };

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { EntityFactory } from '../core/EntityFactory';
-import { SceneFactory } from '../sceneObjects/SceneFactory';
+import { Scene, SceneOptions } from '../sceneObjects/Scene';
 import type { CreateUniformBufferFunction, Entity, UniformBuffer } from '../core/core.types';
 import type { Renderer } from '../renderer/renderer.types';
-import { Scene } from '../sceneObjects/sceneObjects.types';
+import { Scene as SceneType } from '../sceneObjects/sceneObjects.types';
+import { TonyModuleContext } from '../TonyGL.types';
+import { registerMaterialLayoutDescriptor } from '../renderer/bindGroupLayouts/materials';
 
 function createEntity(
   name: string,
@@ -37,10 +39,7 @@ function createUniformBufferStub(onDestroy?: () => void): UniformBuffer {
   };
 }
 
-function createScene(
-  options: Parameters<ReturnType<typeof SceneFactory>>[0] = {},
-  onUniformBufferDestroy?: () => void,
-): Scene {
+function createScene(options: SceneOptions = {}, onUniformBufferDestroy?: () => void): SceneType {
   const renderer = {
     device: {
       createBindGroup: () => ({}) as GPUBindGroup,
@@ -51,7 +50,14 @@ function createScene(
   } as unknown as Renderer;
 
   const createUniformBuffer: CreateUniformBufferFunction = () => createUniformBufferStub(onUniformBufferDestroy);
-  return SceneFactory(renderer, EntityFactory, createUniformBuffer)(options);
+  const tonyContext: TonyModuleContext = {
+    renderer,
+    entityFactory: EntityFactory,
+    createUniformBuffer,
+    registerMaterialLayoutDescriptor,
+  };
+  const sceneProduct = Scene(tonyContext);
+  return sceneProduct.createScene(options);
 }
 
 function buildSceneFixture() {

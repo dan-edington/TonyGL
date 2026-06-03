@@ -2,6 +2,13 @@ import '../style.css';
 import { sphere } from 'primitive-geometry';
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
+import { PerspectiveCamera } from '../../src/camera/PerspectiveCamera';
+import { OrbitControls } from '../../src/camera/OrbitControls';
+import { Geometry } from '../../src/geometry/Geometry';
+import { Scene } from '../../src/sceneObjects/Scene';
+import { Mesh } from '../../src/sceneObjects/Mesh';
+import { PointLight } from '../../src/lights/PointLight';
+import { BlinnPhongMaterial } from '../../src/materials/BlinnPhongMaterial';
 
 import { TonyGL } from '../../src/TonyGL';
 
@@ -10,7 +17,11 @@ const pane = new Pane();
 pane.registerPlugin(EssentialsPlugin);
 
 if (container) {
-  const t = await TonyGL({ containerElement: container, alpha: true });
+  const t = await TonyGL({
+    containerElement: container,
+    alpha: true,
+    modules: [PerspectiveCamera, OrbitControls, Geometry, Scene, Mesh, PointLight, BlinnPhongMaterial],
+  });
 
   const scene = t.createScene();
   scene.setClearColor([1, 0.25, 0.25, 1]);

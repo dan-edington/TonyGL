@@ -1,13 +1,8 @@
 import { colorToLinear } from '../utilities/colorUtilities';
 import { BaseMaterialFactory, MaterialFlags } from './BaseMaterialFactory';
-import type { CreateUniformBufferFunction, UniformBuffer } from '../core/core.types';
-import type { Renderer } from '../renderer/renderer.types';
-import type { BaseMaterial } from './materials.types';
-
-export type UnlitMaterial = BaseMaterial & {
-  color: Float32Array;
-  setColor(value: ArrayLike<number>): void;
-};
+import type { UniformBuffer } from '../core/core.types';
+import type { UnlitMaterial as UnlitMaterialType } from './materials.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
 export type UnlitMaterialOptions = {
   color?: ArrayLike<number>;
@@ -18,10 +13,24 @@ export type UnlitMaterialOptions = {
   depthWrite?: boolean;
 };
 
-function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUniformBufferFunction) {
+function UnlitMaterial(context: TonyModuleContext) {
+  const { renderer, createUniformBuffer, registerMaterialLayoutDescriptor } = context;
+
   const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
 
-  function createUnlitMaterial(options: UnlitMaterialOptions = {}): UnlitMaterial {
+  const unlitMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
+    label: 'UnlitMaterial Bind Group Layout',
+    entries: [
+      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
+    ],
+  };
+
+  registerMaterialLayoutDescriptor('unlit', unlitMaterialLayoutDescriptor);
+
+  function createUnlitMaterial(options: UnlitMaterialOptions = {}): UnlitMaterialType {
     let color = new Float32Array(options.color ?? [1, 1, 1, 1]);
     let materialFlags = MaterialFlags.None;
 
@@ -38,7 +47,7 @@ function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUni
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Unlit material sampler not found.');
 
-    const self = createBaseMaterial<UnlitMaterial>({
+    const self = createBaseMaterial<UnlitMaterialType>({
       type: 'unlit',
       shader: 'unlit',
       transparent: options.transparent ?? false,
@@ -74,14 +83,4 @@ function UnlitMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUni
   return { createUnlitMaterial };
 }
 
-const unlitMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
-  label: 'UnlitMaterial Bind Group Layout',
-  entries: [
-    { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-    { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    { binding: 3, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
-  ],
-};
-
-export { UnlitMaterialFactory, unlitMaterialLayoutDescriptor };
+export { UnlitMaterial };

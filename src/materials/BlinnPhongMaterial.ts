@@ -1,8 +1,8 @@
-import { CreateUniformBufferFunction, UniformBuffer } from '../core/core.types';
-import { Renderer } from '../renderer/renderer.types';
+import { UniformBuffer } from '../core/core.types';
+import { TonyModuleContext } from '../TonyGL.types';
 import { colorToLinear } from '../utilities/colorUtilities';
 import { BaseMaterialFactory, MaterialFlags } from './BaseMaterialFactory';
-import { BlinnPhongMaterial } from './materials.types';
+import { BlinnPhongMaterial as BlinnPhongMaterialType } from './materials.types';
 
 export type BlinnPhongMaterialOptions = {
   name?: string;
@@ -18,10 +18,25 @@ export type BlinnPhongMaterialOptions = {
   depthWrite?: boolean;
 };
 
-function BlinnPhongMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUniformBufferFunction) {
+function BlinnPhongMaterial(context: TonyModuleContext) {
+  const { renderer, createUniformBuffer, registerMaterialLayoutDescriptor } = context;
+
   const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
 
-  function createBlinnPhongMaterial(options: BlinnPhongMaterialOptions = {}): BlinnPhongMaterial {
+  const blinnPhongMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
+    label: 'BlinnPhongMaterial Bind Group Layout',
+    entries: [
+      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 4, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
+    ],
+  };
+
+  registerMaterialLayoutDescriptor('blinnphong', blinnPhongMaterialLayoutDescriptor);
+
+  function createBlinnPhongMaterial(options: BlinnPhongMaterialOptions = {}): BlinnPhongMaterialType {
     let color = new Float32Array(options.color ?? [1, 1, 1, 1]);
     let shininess = options.shininess ?? 1;
     let specularColor = new Float32Array(options.specularColor ?? [1, 1, 1]);
@@ -48,7 +63,7 @@ function BlinnPhongMaterialFactory(renderer: Renderer, createUniformBuffer: Crea
       throw new Error('BlinnPhong material sampler not found.');
     }
 
-    const self = createBaseMaterial<BlinnPhongMaterial>({
+    const self = createBaseMaterial<BlinnPhongMaterialType>({
       type: 'blinnphong',
       shader: 'blinnphong',
       transparent: options.transparent ?? false,
@@ -106,15 +121,4 @@ function BlinnPhongMaterialFactory(renderer: Renderer, createUniformBuffer: Crea
   return { createBlinnPhongMaterial };
 }
 
-const blinnPhongMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
-  label: 'BlinnPhongMaterial Bind Group Layout',
-  entries: [
-    { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-    { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    { binding: 4, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
-  ],
-};
-
-export { BlinnPhongMaterialFactory, blinnPhongMaterialLayoutDescriptor };
+export { BlinnPhongMaterial };

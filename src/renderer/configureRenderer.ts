@@ -61,8 +61,7 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer | WebGP
   const multiSampleTexture = createMultiSampleTexture(device, canvasElement, msaa);
   const depthTexture = createDepthTexture(device, canvasElement, msaa);
 
-  const { cameraBindGroupLayout, sceneBindGroupLayout, entityBindGroupLayout, materialBindGroupLayouts } =
-    initializeBindGroupLayouts(device);
+  const { cameraBindGroupLayout, sceneBindGroupLayout, entityBindGroupLayout } = initializeBindGroupLayouts(device);
 
   const timers = {
     currentTime: 0,
@@ -82,7 +81,7 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer | WebGP
       cameraBindGroupLayout,
       sceneBindGroupLayout,
       entityBindGroupLayout,
-      materialBindGroupLayouts,
+      materialBindGroupLayouts: null,
     },
     timers,
   } as Renderer;

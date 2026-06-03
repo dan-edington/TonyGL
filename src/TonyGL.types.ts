@@ -1,28 +1,18 @@
-import { OrbitControls, PerspectiveCamera } from './camera/camera.types';
-import { OrbitControlsOptions } from './camera/OrbitControlsFactory';
-import { PerspectiveCameraOptions } from './camera/PerspectiveCameraFactory';
-import { UniformBuffer, UniformBufferOptions, UniformObject } from './core/core.types';
-import { Geometry } from './geometry/geometry.types';
-import { GeometryOptions } from './geometry/GeometryFactory';
-import { DirectionalLightOptions } from './lights/DirectionalLightFactory';
-import { DirectionalLight, PointLight, SpotLight } from './lights/lights.types';
-import { PointLightOptions } from './lights/PointLightFactory';
-import { SpotLightOptions } from './lights/SpotLightFactory';
-import { BlinnPhongMaterialOptions } from './materials/BlinnPhongMaterialFactory';
-import { CustomMaterialOptions } from './materials/CustomMaterialFactory';
-import { LambertMaterialOptions } from './materials/LambertMaterialFactory';
-import { BlinnPhongMaterial, CustomMaterial, LambertMaterial } from './materials/materials.types';
-import { NormalMaterial, NormalMaterialOptions } from './materials/NormalMaterialFactory';
-import { UnlitMaterial, UnlitMaterialOptions } from './materials/UnlitMaterialFactory';
+import { PerspectiveCamera } from './camera/camera.types';
+import {
+  CreateUniformBufferFunction,
+  EntityFactoryFunction,
+  UniformBuffer,
+  UniformBufferOptions,
+  UniformObject,
+} from './core/core.types';
+import { MaterialType } from './materials/materials.types';
 import { Renderer } from './renderer/renderer.types';
-import { GroupOptions } from './sceneObjects/GroupFactory';
-import { MeshOptions } from './sceneObjects/MeshFactory';
-import { SceneOptions } from './sceneObjects/SceneFactory';
-import { Group, Mesh, Scene } from './sceneObjects/sceneObjects.types';
-import { CreateTextureFromDataOptions } from './texture/Texture';
-import { Texture } from './texture/texture.types';
+import { Scene } from './sceneObjects/sceneObjects.types';
 
-export type TonyFullOptions = {
+type UnionToIntersection<U> = (U extends unknown ? (arg: U) => void : never) extends (arg: infer I) => void ? I : never;
+
+export type TonyFullOptions<M extends readonly TonyModuleFactory[] = readonly TonyModuleFactory[]> = {
   webGPUSetupOnly?: false;
   containerElement?: HTMLElement;
   dpr?: number;
@@ -30,6 +20,7 @@ export type TonyFullOptions = {
   multiSampling?: number;
   requiredFeatures?: GPUFeatureName[];
   requiredLimits?: Record<string, number>;
+  modules?: M;
 };
 
 export type TonySetupOnlyOptions = {
@@ -42,30 +33,28 @@ export type TonySetupOnlyOptions = {
   multiSampling?: never;
 };
 
-export type TonyOptions = TonyFullOptions | TonySetupOnlyOptions;
+export type TonyModuleFactory = (context: TonyModuleContext) => TonyModule;
+
+export type TonyModule = Record<string, unknown>;
+
+export type TonyModuleContext = {
+  renderer: Renderer;
+  entityFactory: EntityFactoryFunction;
+  createUniformBuffer: CreateUniformBufferFunction;
+  registerMaterialLayoutDescriptor: (name: MaterialType, descriptor: GPUBindGroupLayoutDescriptor) => void;
+};
+
+export type TonyOptions<M extends readonly TonyModuleFactory[] = readonly TonyModuleFactory[]> =
+  | TonyFullOptions<M>
+  | TonySetupOnlyOptions;
 
 export type Tony = {
   renderer: Renderer;
-  createGroup: (options: GroupOptions) => Group;
-  createScene: (options?: SceneOptions) => Scene;
-  createPerspectiveCamera: (options?: PerspectiveCameraOptions) => PerspectiveCamera;
-  createPointLight: (options?: PointLightOptions) => PointLight;
-  createDirectionalLight: (options?: DirectionalLightOptions) => DirectionalLight;
-  createSpotLight: (options?: SpotLightOptions) => SpotLight;
-  createOrbitControls: (options: OrbitControlsOptions) => OrbitControls;
-  createGeometry: (options: GeometryOptions) => Geometry;
-  createMesh: (
-    geometry: Geometry,
-    material: BlinnPhongMaterial | UnlitMaterial | LambertMaterial | NormalMaterial | CustomMaterial,
-    options?: MeshOptions,
-  ) => Mesh;
-  createBlinnPhongMaterial: (options?: BlinnPhongMaterialOptions) => BlinnPhongMaterial;
-  createUnlitMaterial: (options?: UnlitMaterialOptions) => UnlitMaterial;
-  createLambertMaterial: (options?: LambertMaterialOptions) => LambertMaterial;
-  createNormalMaterial: (options?: NormalMaterialOptions) => NormalMaterial;
-  createCustomMaterial: (options: CustomMaterialOptions) => CustomMaterial;
   createUniformBuffer: (uniformObject: UniformObject, options?: UniformBufferOptions) => UniformBuffer;
-  createTextureFromData: (options: CreateTextureFromDataOptions) => Texture;
   render: (scene: Scene, camera: PerspectiveCamera) => void;
   destroy: () => void;
 };
+
+export type ModulesToObject<M extends readonly TonyModuleFactory[]> = UnionToIntersection<ReturnType<M[number]>>;
+
+export type TonyWithModules<M extends readonly TonyModuleFactory[]> = Tony & ModulesToObject<M>;

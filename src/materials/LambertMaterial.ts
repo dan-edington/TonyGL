@@ -1,8 +1,8 @@
-import { CreateUniformBufferFunction, UniformBuffer } from '../core/core.types';
+import { UniformBuffer } from '../core/core.types';
 import { colorToLinear } from '../utilities/colorUtilities';
 import { BaseMaterialFactory, MaterialFlags } from './BaseMaterialFactory';
-import type { Renderer } from '../renderer/renderer.types';
-import type { LambertMaterial } from './materials.types';
+import type { LambertMaterial as LambertMaterialType } from './materials.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
 export type LambertMaterialOptions = {
   color?: ArrayLike<number>;
@@ -14,10 +14,25 @@ export type LambertMaterialOptions = {
   depthWrite?: boolean;
 };
 
-function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUniformBufferFunction) {
+function LambertMaterial(context: TonyModuleContext) {
+  const { renderer, createUniformBuffer, registerMaterialLayoutDescriptor } = context;
+
   const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
 
-  function createLambertMaterial(options: LambertMaterialOptions = {}): LambertMaterial {
+  const lambertMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
+    label: 'LambertMaterial Bind Group Layout',
+    entries: [
+      { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
+      { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+      { binding: 4, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
+    ],
+  };
+
+  registerMaterialLayoutDescriptor('lambert', lambertMaterialLayoutDescriptor);
+
+  function createLambertMaterial(options: LambertMaterialOptions = {}): LambertMaterialType {
     let color = new Float32Array(options.color ?? [1, 1, 1, 1]);
     let materialFlags = MaterialFlags.None;
 
@@ -39,7 +54,7 @@ function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateU
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Lambert material sampler not found.');
 
-    const self = createBaseMaterial<LambertMaterial>({
+    const self = createBaseMaterial<LambertMaterialType>({
       type: 'lambert',
       shader: 'lambert',
       transparent: options.transparent ?? false,
@@ -76,15 +91,4 @@ function LambertMaterialFactory(renderer: Renderer, createUniformBuffer: CreateU
   return { createLambertMaterial };
 }
 
-const lambertMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
-  label: 'LambertMaterial Bind Group Layout',
-  entries: [
-    { binding: 0, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } },
-    { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    { binding: 2, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    { binding: 3, visibility: GPUShaderStage.FRAGMENT, texture: {} },
-    { binding: 4, visibility: GPUShaderStage.FRAGMENT, sampler: {} },
-  ],
-};
-
-export { LambertMaterialFactory, lambertMaterialLayoutDescriptor };
+export { LambertMaterial };
