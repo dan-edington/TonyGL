@@ -2,11 +2,22 @@ import '../style.css';
 import { sphere } from 'primitive-geometry';
 
 import { TonyGL } from '../../src';
+import { PerspectiveCamera } from '../../src/camera/PerspectiveCamera';
+import { OrbitControls } from '../../src/camera/OrbitControls';
+import { Geometry } from '../../src/geometry/Geometry';
+import { Scene } from '../../src/sceneObjects/Scene';
+import { Mesh } from '../../src/sceneObjects/Mesh';
+import { PointLight } from '../../src/lights/PointLight';
+import { NormalMaterial } from '../../src/materials/NormalMaterial';
 
 const container = document.getElementById('app');
 
 if (container) {
-  const tony = await TonyGL({ containerElement: container, alpha: true });
+  const tony = await TonyGL({
+    containerElement: container,
+    alpha: true,
+    modules: [PerspectiveCamera, OrbitControls, Geometry, Scene, Mesh, PointLight, NormalMaterial],
+  });
   const scene = tony.createScene();
   scene.setClearColor([0.25, 0.25, 0.25, 1]);
 
