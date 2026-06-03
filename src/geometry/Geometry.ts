@@ -1,6 +1,6 @@
 import { padArrayToAlignmentBytes } from '../utilities/padArrayToAlignmentBytes';
-import type { Renderer } from '../renderer/renderer.types';
 import type { Geometry } from './geometry.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
 export type GeometryOptions = {
   name?: string;
@@ -11,8 +11,10 @@ export type GeometryOptions = {
   topology?: GPUPrimitiveTopology;
 };
 
-function GeometryFactory(renderer: Renderer) {
-  return function createGeometry(options: GeometryOptions): Geometry {
+function Geometry(context: TonyModuleContext) {
+  const { renderer } = context;
+
+  function createGeometry(options: GeometryOptions): Geometry {
     const id = crypto.randomUUID();
     const name = options.name ?? '';
     const type = 'Geometry';
@@ -234,7 +236,11 @@ function GeometryFactory(renderer: Renderer) {
     };
 
     return self;
+  }
+
+  return {
+    createGeometry,
   };
 }
 
-export { GeometryFactory };
+export { Geometry };

@@ -1,7 +1,7 @@
 import { mat4 } from 'wgpu-matrix';
 import type { PerspectiveCamera } from './camera.types';
-import type { CreateUniformBufferFunction, EntityFactoryFunction, EntityOptions } from '../core/core.types';
-import type { Renderer } from '../renderer/renderer.types';
+import type { EntityOptions } from '../core/core.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
 export type PerspectiveCameraOptions = Omit<EntityOptions, 'type'> & {
   near?: number;
@@ -10,12 +10,10 @@ export type PerspectiveCameraOptions = Omit<EntityOptions, 'type'> & {
   aspect?: number;
 };
 
-function PerspectiveCameraFactory(
-  renderer: Renderer,
-  entityFactory: EntityFactoryFunction,
-  createUniformBuffer: CreateUniformBufferFunction,
-) {
-  return function createPerspectiveCamera(options?: PerspectiveCameraOptions): PerspectiveCamera {
+function PerspectiveCamera(context: TonyModuleContext) {
+  const { renderer, entityFactory, createUniformBuffer } = context;
+
+  function createPerspectiveCamera(options?: PerspectiveCameraOptions): PerspectiveCamera {
     const { entity: self, subscribe } = entityFactory<PerspectiveCamera>({
       ...options,
       type: 'PerspectiveCamera',
@@ -148,7 +146,11 @@ function PerspectiveCameraFactory(
     });
 
     return self;
+  }
+
+  return {
+    createPerspectiveCamera,
   };
 }
 
-export { PerspectiveCameraFactory };
+export { PerspectiveCamera };

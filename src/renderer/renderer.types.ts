@@ -26,7 +26,7 @@ export type Renderer = WebGPUBase & {
     cameraBindGroupLayout: GPUBindGroupLayout;
     sceneBindGroupLayout: GPUBindGroupLayout;
     entityBindGroupLayout: GPUBindGroupLayout;
-    materialBindGroupLayouts: Map<string, GPUBindGroupLayout>;
+    materialBindGroupLayouts: Map<string, GPUBindGroupLayout> | null;
   };
   pipelineManager: PipelineManager;
   passManager: PassManager;

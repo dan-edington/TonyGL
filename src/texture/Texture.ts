@@ -14,7 +14,8 @@ export type CreateTextureFromDataOptions = {
   textureData: ImageBitmap | [number, number, number] | [number, number, number, number];
   colorSpace?: TextureColorSpace;
 };
-function TextureFactory(renderer: Renderer) {
+
+function Texture(renderer: Renderer) {
   function createTextureResource(options: CreateTextureResourceOptions): Texture {
     const colorSpace = options.colorSpace || 'srgb';
     const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
@@ -65,7 +66,7 @@ function TextureFactory(renderer: Renderer) {
     return self;
   }
 
-  function createTextureFromData(options: CreateTextureFromDataOptions): Texture {
+  function createTexture(options: CreateTextureFromDataOptions): Texture {
     const { width, height, textureData, colorSpace = 'srgb' } = options;
 
     const self = createTextureResource({ width, height, colorSpace });
@@ -108,7 +109,7 @@ function TextureFactory(renderer: Renderer) {
     return self;
   }
 
-  return createTextureFromData;
+  return createTexture;
 }
 
-export { TextureFactory };
+export { Texture };

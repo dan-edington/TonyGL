@@ -1,6 +1,5 @@
 import { constants } from '../../constants/constants';
 import { postProcessingBindGroupLayoutDescriptor } from '../bindGroupLayouts/postprocessing';
-import { GeometryFactory } from '../../geometry/GeometryFactory';
 import { PipelineManagerFactory } from '../PipelineManagerFactory';
 import { createPass } from './pass';
 import type { Scene } from '../../sceneObjects/sceneObjects.types';
@@ -21,15 +20,38 @@ function createPostProcessingPass(options: PostProcessingPassOptions): Pass {
     },
   });
 
-  const createGeometry = GeometryFactory(renderer);
   const { getOrCreateRenderPipeline } = PipelineManagerFactory(renderer);
 
-  const geometry = createGeometry({
+  const geometry = {
     vertices: new Float32Array([-1, -1, 0, 1, -1, 0, -1, 1, 0, 1, 1, 0]),
     uvs: new Float32Array([0, 1, 1, 1, 0, 0, 1, 0]),
     indices: new Uint16Array([0, 1, 2, 2, 1, 3]),
     normals: new Float32Array([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1]),
+  };
+
+  const vertexBuffer = renderer.device.createBuffer({
+    size: geometry.vertices.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
   });
+  renderer.device.queue.writeBuffer(vertexBuffer, 0, geometry.vertices.buffer);
+
+  const indexBuffer = renderer.device.createBuffer({
+    size: geometry.indices.byteLength,
+    usage: GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST,
+  });
+  renderer.device.queue.writeBuffer(indexBuffer, 0, geometry.indices.buffer);
+
+  const uvBuffer = renderer.device.createBuffer({
+    size: geometry.uvs.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+  });
+  renderer.device.queue.writeBuffer(uvBuffer, 0, geometry.uvs.buffer);
+
+  const normalBuffer = renderer.device.createBuffer({
+    size: geometry.normals.byteLength,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+  });
+  renderer.device.queue.writeBuffer(normalBuffer, 0, geometry.normals.buffer);
 
   const bindGroupLayout = renderer.device.createBindGroupLayout(postProcessingBindGroupLayoutDescriptor);
 
@@ -107,16 +129,14 @@ function createPostProcessingPass(options: PostProcessingPassOptions): Pass {
     pass.setPipeline(pipeline);
     pass.setBindGroup(constants.bindGroupIndices.POSTPROCESSING, bindGroup);
 
-    pass.setVertexBuffer(0, geometry.vertexBuffer);
-    pass.setVertexBuffer(1, geometry.normalBuffer);
-    pass.setVertexBuffer(2, geometry.uvBuffer);
+    pass.setVertexBuffer(0, vertexBuffer);
+    pass.setVertexBuffer(1, normalBuffer);
+    pass.setVertexBuffer(2, uvBuffer);
 
-    if (!geometry.indexBuffer || !geometry.indexFormat) {
-      throw new Error('PostProcessing geometry index data missing');
-    }
+    pass.setIndexBuffer(indexBuffer, 'uint16');
 
-    pass.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat);
-    pass.drawIndexed(geometry.indexCount);
+    pass.drawIndexed(geometry.indices.length);
+
     pass.end();
   }
 

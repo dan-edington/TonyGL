@@ -1,16 +1,22 @@
 import { LightFactory } from './LightFactory';
 import { LightFlag } from './LightManagerFactory';
-import type { EntityFactoryFunction } from '../core/core.types';
 import type { LightOptions, PointLight } from './lights.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
 export type PointLightOptions = LightOptions;
 
-function PointLightFactory(entityFactory: EntityFactoryFunction) {
+function PointLight(context: TonyModuleContext) {
+  const { entityFactory } = context;
+
   const createLight = LightFactory(entityFactory);
 
-  return function createPointLight(options: PointLightOptions = {}): PointLight {
+  function createPointLight(options: PointLightOptions = {}): PointLight {
     return createLight.createLightBase<PointLight>('PointLight', options, LightFlag.PointLight);
+  }
+
+  return {
+    createPointLight,
   };
 }
 
-export { PointLightFactory };
+export { PointLight };

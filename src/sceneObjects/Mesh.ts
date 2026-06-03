@@ -1,25 +1,22 @@
 import { constants } from '../constants/constants';
-import type { EntityFactoryFunction, EntityOptions } from '../core/core.types';
+import type { EntityOptions } from '../core/core.types';
 import type { Geometry } from '../geometry/geometry.types';
 import type { BaseMaterial } from '../materials/materials.types';
-import type { CreateUniformBufferFunction } from '../core/core.types';
 import type { Mesh } from './sceneObjects.types';
-import type { Renderer } from '../renderer/renderer.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
 export type MeshOptions = Omit<EntityOptions, 'type'>;
 
-function MeshFactory(
-  renderer: Renderer,
-  entityFactory: EntityFactoryFunction,
-  createUniformBuffer: CreateUniformBufferFunction,
-) {
-  return function createMesh(geometry: Geometry, material: BaseMaterial, options?: MeshOptions): Mesh {
+function Mesh(context: TonyModuleContext) {
+  const { renderer, createUniformBuffer, entityFactory } = context;
+
+  function createMesh(geometry: Geometry, material: BaseMaterial, options?: MeshOptions): Mesh {
     const { entity: self } = entityFactory<Mesh>({
       ...options,
       type: 'Mesh',
     });
 
-    const materialBindGroupLayout = renderer.bindGroupLayouts.materialBindGroupLayouts.get(material.type);
+    const materialBindGroupLayout = renderer.bindGroupLayouts.materialBindGroupLayouts?.get(material.type);
 
     if (!materialBindGroupLayout) {
       throw new Error(`Material bind group layout missing for type: ${material.type}`);
@@ -139,7 +136,11 @@ function MeshFactory(
     updateEntityBufferFromMatrix();
 
     return self;
+  }
+
+  return {
+    createMesh,
   };
 }
 
-export { MeshFactory };
+export { Mesh };
