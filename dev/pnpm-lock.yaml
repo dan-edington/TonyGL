@@ -14,9 +14,16 @@ importers:
       primitive-geometry:
         specifier: ^2.11.0
         version: 2.11.0
+      stats.js:
+        specifier: ^0.17.0
+        version: 0.17.0
       tweakpane:
         specifier: ^4.0.5
         version: 4.0.5
+    devDependencies:
+      '@types/stats.js':
+        specifier: ^0.17.4
+        version: 0.17.4
 
 packages:
 
@@ -25,9 +32,15 @@ packages:
     peerDependencies:
       tweakpane: ^4.0.0
 
+  '@types/stats.js@0.17.4':
+    resolution: {integrity: sha512-jIBvWWShCvlBqBNIZt0KAshWpvSjhkwkEu4ZUcASoAvhmrgAUI2t1dXrjSL4xXVLB4FznPrIsX3nKXFl/Dt4vA==}
+
   primitive-geometry@2.11.0:
     resolution: {integrity: sha512-W/Kl9za7sIQWRWvY6Fvr/wnexhP6D3fBcPz4gZsE2aMiUgm0N8ZUCQiwG/h+r+P1qTKi2yEINF3x79WN6gJSXA==}
     engines: {node: '>=22.0.0', npm: '>=10.5.1', snowdev: '>=2.3.x'}
+
+  stats.js@0.17.0:
+    resolution: {integrity: sha512-hNKz8phvYLPEcRkeG1rsGmV5ChMjKDAWU7/OJJdDErPBNChQXxCo3WZurGpnWc6gZhAzEPFad1aVgyOANH1sMw==}
 
   tweakpane@4.0.5:
     resolution: {integrity: sha512-rxEXdSI+ArlG1RyO6FghC4ZUX8JkEfz8F3v1JuteXSV0pEtHJzyo07fcDG+NsJfN5L39kSbCYbB9cBGHyuI/tQ==}
@@ -38,6 +51,10 @@ snapshots:
     dependencies:
       tweakpane: 4.0.5
 
+  '@types/stats.js@0.17.4': {}
+
   primitive-geometry@2.11.0: {}
+
+  stats.js@0.17.0: {}
 
   tweakpane@4.0.5: {}
