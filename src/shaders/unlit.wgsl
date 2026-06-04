@@ -22,6 +22,7 @@ struct VertexOutput {
 
 @vertex
 fn vertex_shader(
+  @builtin(instance_index) instanceIndex: u32,
   @location(0) pos: vec3<f32>,
   @location(1) normal: vec3<f32>,
   @location(2) uvs: vec2<f32>,
@@ -29,7 +30,7 @@ fn vertex_shader(
 
   var out: VertexOutput;
 
-  out.position = cameraUniforms.viewProjectionMatrix * entityUniforms.modelMatrix * vec4f(pos, 1.0);
+  out.position = cameraUniforms.viewProjectionMatrix * entityUniforms[instanceIndex].modelMatrix * vec4f(pos, 1.0);
   out.uvs = uvs;
 
   return out;

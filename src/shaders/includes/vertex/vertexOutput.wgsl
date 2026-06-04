@@ -1,6 +1,6 @@
 var out: VertexOutput;
 
-let modelMatrix = entityUniforms.modelMatrix;
+let modelMatrix = entityUniforms[instanceIndex].modelMatrix;
 
 let t = normalize((modelMatrix * vec4f(tangent.xyz, 0.0)).xyz);
 let n = normalize((modelMatrix * vec4f(normal, 0.0)).xyz);

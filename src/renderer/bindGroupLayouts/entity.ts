@@ -4,7 +4,7 @@ const entityBindGroupLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
     {
       binding: 0,
       visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
-      buffer: { type: 'uniform' },
+      buffer: { type: 'read-only-storage' },
     },
   ],
 };

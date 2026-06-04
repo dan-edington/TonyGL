@@ -16,6 +16,18 @@ export type Mesh = Entity & {
   destroy(): void;
 };
 
+export type InstanceMesh = Entity & {
+  geometry: Geometry;
+  material: BaseMaterial;
+  pipeline: GPURenderPipeline;
+  entityUniformsBuffer: UniformBuffer;
+  entityUniformsBindGroup: GPUBindGroup;
+  instanceCount: number;
+  setMatrixAtIndex(matrix: ArrayLike<number>, index: number): void;
+  draw(pass: GPURenderPassEncoder, renderer: Renderer): void;
+  destroy(): void;
+};
+
 export type Scene = Entity & {
   isScene: true;
   renderList: DrawableEntity[];

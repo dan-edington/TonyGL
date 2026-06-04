@@ -28,6 +28,7 @@ struct MaterialUniforms {
 
 @vertex
 fn vertex_shader(
+  @builtin(instance_index) instanceIndex: u32,
   @location(0) pos: vec3<f32>,
   @location(1) normal: vec3<f32>,
   @location(2) uvs: vec2<f32>,
