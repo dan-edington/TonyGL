@@ -67,7 +67,7 @@ function InstanceMesh(context: TonyModuleContext) {
       ],
       depthStencilState: {
         format: 'depth24plus',
-        depthWriteEnabled: material.transparent ? false : material.depthWrite,
+        depthWriteEnabled: true,
         depthCompare: 'less',
       },
       blendState: material.usesAlphaPipeline
