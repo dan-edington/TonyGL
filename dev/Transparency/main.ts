@@ -1,4 +1,5 @@
 import '../style.css';
+import Stats from 'stats.js';
 import { sphere } from 'primitive-geometry';
 import { Pane } from 'tweakpane';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
@@ -6,12 +7,16 @@ import { PerspectiveCamera } from '../../src/camera/PerspectiveCamera';
 import { OrbitControls } from '../../src/camera/OrbitControls';
 import { Geometry } from '../../src/geometry/Geometry';
 import { Scene } from '../../src/sceneObjects/Scene';
+import { Group } from '../../src/sceneObjects/Group';
 import { Mesh } from '../../src/sceneObjects/Mesh';
 import { PointLight } from '../../src/lights/PointLight';
-import { BlinnPhongMaterial } from '../../src/materials/BlinnPhongMaterial';
+import { LambertMaterial } from '../../src/materials/LambertMaterial';
 
 import { TonyGL } from '../../src/TonyGL';
 
+const stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
 const container = document.getElementById('app');
 const pane = new Pane();
 pane.registerPlugin(EssentialsPlugin);
@@ -20,11 +25,11 @@ if (container) {
   const t = await TonyGL({
     containerElement: container,
     alpha: true,
-    modules: [PerspectiveCamera, OrbitControls, Geometry, Scene, Mesh, PointLight, BlinnPhongMaterial],
+    modules: [PerspectiveCamera, OrbitControls, Geometry, Scene, Group, Mesh, PointLight, LambertMaterial],
   });
 
   const scene = t.createScene();
-  scene.setClearColor([1, 0.25, 0.25, 1]);
+  scene.setClearColor([0.25, 0.25, 0.25, 1]);
 
   const camera = t.createPerspectiveCamera({
     near: 0.1,
@@ -33,7 +38,7 @@ if (container) {
     aspect: container.clientWidth / container.clientHeight,
   });
 
-  const spherePrimitive = sphere({ radius: 1, nx: 32, ny: 32 });
+  const spherePrimitive = sphere({ radius: 0.25, nx: 32, ny: 32 });
 
   const sphereGeometry = t.createGeometry({
     name: 'Sphere',
@@ -52,7 +57,7 @@ if (container) {
 
   const lightParams = {
     color: { r: 1, g: 1, b: 1, a: 1 },
-    intensity: 4,
+    intensity: 10,
     x: 2,
     y: 2,
     z: 2,
@@ -61,10 +66,10 @@ if (container) {
 
   const ambientParams = {
     color: { r: 1, g: 1, b: 1, a: 1 },
-    intensity: 0,
+    intensity: 0.08,
   };
 
-  const blinnPhongMaterial = t.createBlinnPhongMaterial({
+  const blinnPhongMaterial = t.createLambertMaterial({
     transparent: true,
     color: [
       blinnPhongMaterialParams.color.r,
@@ -72,16 +77,22 @@ if (container) {
       blinnPhongMaterialParams.color.b,
       blinnPhongMaterialParams.color.a,
     ],
-    shininess: blinnPhongMaterialParams.shininess,
-    specularColor: [
-      blinnPhongMaterialParams.specularColor.r,
-      blinnPhongMaterialParams.specularColor.g,
-      blinnPhongMaterialParams.specularColor.b,
-    ],
-    specularStrength: blinnPhongMaterialParams.specularStrength,
   });
 
-  const sphereMesh = t.createMesh(sphereGeometry, blinnPhongMaterial);
+  const sphereMeshA = t.createMesh(sphereGeometry, blinnPhongMaterial);
+  sphereMeshA.setPosition([0, 0, 0]);
+
+  const sphereMeshB = t.createMesh(sphereGeometry, blinnPhongMaterial);
+  sphereMeshB.setPosition([0, 0, 1]);
+
+  const sphereMeshC = t.createMesh(sphereGeometry, blinnPhongMaterial);
+  sphereMeshC.setPosition([0, 0, 2]);
+
+  const sphereMeshD = t.createMesh(sphereGeometry, blinnPhongMaterial);
+  sphereMeshD.setPosition([0, 0, 3]);
+
+  const sphereMeshGroup = t.createGroup();
+  sphereMeshGroup.add([sphereMeshA, sphereMeshB, sphereMeshC, sphereMeshD]);
 
   const pointLight = t.createPointLight({
     color: [lightParams.color.r, lightParams.color.g, lightParams.color.b, lightParams.color.a],
@@ -92,7 +103,7 @@ if (container) {
   pointLight.setPosition([lightParams.x, lightParams.y, lightParams.z]);
   pointLight.visible = lightParams.visible;
 
-  scene.add([sphereMesh, pointLight]);
+  scene.add([sphereMeshGroup, pointLight]);
   scene.setAmbientLightColor([
     ambientParams.color.r,
     ambientParams.color.g,
@@ -107,7 +118,9 @@ if (container) {
   t.createOrbitControls({ camera, domElement: t.renderer.canvasElement });
 
   function render() {
+    stats.begin();
     t.render(scene, camera);
+    stats.end();
     requestAnimationFrame(render);
   }
 
@@ -125,25 +138,6 @@ if (container) {
     .on('change', () => {
       const value = blinnPhongMaterialParams.color;
       blinnPhongMaterial.setColor([value.r, value.g, value.b, value.a]);
-    });
-
-  blinnPhongMaterialFolder
-    .addBinding(blinnPhongMaterialParams, 'shininess', { min: 0, max: 1000, step: 0.1 })
-    .on('change', () => {
-      blinnPhongMaterial.setShininess(blinnPhongMaterialParams.shininess);
-    });
-
-  blinnPhongMaterialFolder
-    .addBinding(blinnPhongMaterialParams, 'specularStrength', { min: 0, max: 1, step: 0.1 })
-    .on('change', () => {
-      blinnPhongMaterial.setSpecularStrength(blinnPhongMaterialParams.specularStrength);
-    });
-
-  blinnPhongMaterialFolder
-    .addBinding(blinnPhongMaterialParams, 'specularColor', { color: { type: 'float' } })
-    .on('change', () => {
-      const value = blinnPhongMaterialParams.specularColor;
-      blinnPhongMaterial.setSpecularColor([value.r, value.g, value.b]);
     });
 
   const lightFolder = paneApi.addFolder ? paneApi.addFolder({ title: 'Light' }) : paneApi;

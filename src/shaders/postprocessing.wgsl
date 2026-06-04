@@ -32,7 +32,8 @@ fn fragment_shader(
 
   var textureColor = textureSample(sceneTexture, sceneSampler, in.uvs);
   var toneMapped = acesToneMap(textureColor.rgb);
-  var finalColor = vec4f(linearToSRGB(toneMapped), textureColor.a);
+  var srgbColor = linearToSRGB(toneMapped);
+  var finalColor = vec4f(srgbColor * textureColor.a, textureColor.a);
   
   return finalColor;
 }

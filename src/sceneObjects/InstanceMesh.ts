@@ -1,20 +1,29 @@
 import { constants } from '../constants/constants';
+import { mat4 } from 'wgpu-matrix';
 import type { EntityOptions } from '../core/core.types';
 import type { Geometry } from '../geometry/geometry.types';
 import type { BaseMaterial } from '../materials/materials.types';
-import type { Mesh } from './sceneObjects.types';
-import { TonyModuleContext } from '../TonyGL.types';
+import type { InstanceMesh } from './sceneObjects.types';
+import type { TonyModuleContext } from '../TonyGL.types';
 
-export type MeshOptions = Omit<EntityOptions, 'type'>;
+export type InstanceMeshOptions = Omit<EntityOptions, 'type'>;
 
-function Mesh(context: TonyModuleContext) {
+function InstanceMesh(context: TonyModuleContext) {
   const { renderer, createUniformBuffer, entityFactory } = context;
 
-  function createMesh(geometry: Geometry, material: BaseMaterial, options?: MeshOptions): Mesh {
-    const { entity: self, subscribe } = entityFactory<Mesh>({
+  function createInstanceMesh(
+    geometry: Geometry,
+    material: BaseMaterial,
+    instanceCount: number = 1,
+    options?: InstanceMeshOptions,
+  ): InstanceMesh {
+    const { entity: self, subscribe } = entityFactory<InstanceMesh>({
       ...options,
-      type: 'Mesh',
+      type: 'InstanceMesh',
     });
+
+    let instanceMatricesNeedUpload = true;
+    let baseMatrixChanged = true;
 
     const materialBindGroupLayout = renderer.bindGroupLayouts.materialBindGroupLayouts?.get(material.type);
 
@@ -58,7 +67,7 @@ function Mesh(context: TonyModuleContext) {
       ],
       depthStencilState: {
         format: 'depth24plus',
-        depthWriteEnabled: material.transparent ? false : material.depthWrite,
+        depthWriteEnabled: true,
         depthCompare: 'less',
       },
       blendState: material.usesAlphaPipeline
@@ -77,9 +86,18 @@ function Mesh(context: TonyModuleContext) {
         : undefined,
     });
 
+    const matrixSize = self.matrixWorld.length;
+    const instanceLocalMatrices = new Float32Array(matrixSize * instanceCount);
+    const instanceWorldMatrices = new Float32Array(matrixSize * instanceCount);
+
+    const identity = mat4.identity();
+    for (let i = 0; i < instanceLocalMatrices.length; i += matrixSize) {
+      instanceLocalMatrices.set(identity, i);
+    }
+
     const entityUniformsBuffer = createUniformBuffer(
       {
-        modelMatrix: { type: 'array<mat4x4<f32>, 1>', value: self.matrixWorld },
+        modelMatrix: { type: `array<mat4x4<f32>, ${instanceCount}>`, value: instanceWorldMatrices },
       },
       { addressSpace: 'storage' },
     );
@@ -89,8 +107,40 @@ function Mesh(context: TonyModuleContext) {
       entries: [{ binding: 0, resource: { buffer: entityUniformsBuffer.buffer! } }],
     });
 
-    function updateEntityBufferFromMatrix() {
-      entityUniformsBuffer.updateUniforms({ modelMatrix: self.matrixWorld });
+    function updateInstanceWorldMatrixAtIndex(index: number) {
+      const offset = index * matrixSize;
+      const local = instanceLocalMatrices.subarray(offset, offset + matrixSize);
+      const world = instanceWorldMatrices.subarray(offset, offset + matrixSize);
+
+      // Instance world matrix = InstanceMesh world matrix * per-instance local matrix.
+      mat4.multiply(self.matrixWorld, local, world);
+    }
+
+    function updateAllInstanceWorldMatrices() {
+      for (let i = 0; i < instanceCount; i++) {
+        updateInstanceWorldMatrixAtIndex(i);
+      }
+
+      baseMatrixChanged = false;
+      instanceMatricesNeedUpload = true;
+    }
+
+    function setMatrixAtIndex(matrix: ArrayLike<number>, index: number) {
+      if (index < 0 || index >= instanceCount) {
+        throw new Error(`Instance index ${index} out of bounds for count ${instanceCount}.`);
+      }
+
+      const offset = index * matrixSize;
+      instanceLocalMatrices.set(matrix, offset);
+
+      if (baseMatrixChanged) {
+        // Base transform changed; defer full recomposition to the next draw.
+        instanceMatricesNeedUpload = true;
+        return;
+      }
+
+      updateInstanceWorldMatrixAtIndex(index);
+      instanceMatricesNeedUpload = true;
     }
 
     function draw(pass: GPURenderPassEncoder): void {
@@ -102,6 +152,16 @@ function Mesh(context: TonyModuleContext) {
       pass.setVertexBuffer(3, geometry.tangentBuffer!);
 
       material.writeBuffers();
+
+      if (baseMatrixChanged) {
+        updateAllInstanceWorldMatrices();
+      }
+
+      if (instanceMatricesNeedUpload) {
+        instanceMatricesNeedUpload = false;
+        entityUniformsBuffer.updateUniforms({ modelMatrix: instanceWorldMatrices });
+      }
+
       entityUniformsBuffer.writeUpdatedBufferData();
 
       pass.setBindGroup(constants.bindGroupIndices.ENTITY, entityUniformsBindGroup);
@@ -112,9 +172,9 @@ function Mesh(context: TonyModuleContext) {
 
       if (geometry.isIndexed && geometry.indexBuffer) {
         pass.setIndexBuffer(geometry.indexBuffer, geometry.indexFormat!);
-        pass.drawIndexed(geometry.indexCount);
+        pass.drawIndexed(geometry.indexCount, instanceCount);
       } else {
-        pass.draw(geometry.vertices.length / 3);
+        pass.draw(geometry.vertices.length / 3, instanceCount);
       }
     }
 
@@ -126,23 +186,29 @@ function Mesh(context: TonyModuleContext) {
 
     self.geometry = geometry;
     self.material = material;
+    self.instanceCount = instanceCount;
     self.pipeline = pipeline;
     self.entityUniformsBuffer = entityUniformsBuffer;
     self.entityUniformsBindGroup = entityUniformsBindGroup;
+    self.setMatrixAtIndex = setMatrixAtIndex;
     self.draw = draw;
     self.destroy = destroy;
 
-    // Keep GPU model matrix in sync with entity transforms and hierarchy changes.
-    subscribe('onMatrixUpdated', updateEntityBufferFromMatrix);
+    // Recompose all instance matrices when the base entity transform changes.
+    subscribe('onMatrixUpdated', () => {
+      baseMatrixChanged = true;
+      instanceMatricesNeedUpload = true;
+    });
 
-    updateEntityBufferFromMatrix();
+    updateAllInstanceWorldMatrices();
+    entityUniformsBuffer.updateUniforms({ modelMatrix: instanceWorldMatrices });
 
     return self;
   }
 
   return {
-    createMesh,
+    createInstanceMesh,
   };
 }
 
-export { Mesh };
+export { InstanceMesh };
