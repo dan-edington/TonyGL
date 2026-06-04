@@ -1,5 +1,6 @@
 import type { uuid } from '../core/core.types';
-import { Renderer } from '../renderer/renderer.types';
+import type { Renderer } from '../renderer/renderer.types';
+import type { TonyModuleContext } from '../TonyGL.types';
 import type { TextureColorSpace, Texture, TextureSubscriber } from './texture.types';
 
 export type CreateTextureResourceOptions = {
@@ -15,7 +16,13 @@ export type CreateTextureFromDataOptions = {
   colorSpace?: TextureColorSpace;
 };
 
-function Texture(renderer: Renderer) {
+type TextureContext = TonyModuleContext | Renderer;
+
+function Texture(context: TonyModuleContext): { createTexture: (options: CreateTextureFromDataOptions) => Texture };
+function Texture(context: Renderer): { createTexture: (options: CreateTextureFromDataOptions) => Texture };
+function Texture(context: TextureContext) {
+  const renderer = 'renderer' in context ? context.renderer : context;
+
   function createTextureResource(options: CreateTextureResourceOptions): Texture {
     const colorSpace = options.colorSpace || 'srgb';
     const format: GPUTextureFormat = colorSpace === 'srgb' ? 'rgba8unorm-srgb' : 'rgba8unorm';
@@ -109,7 +116,9 @@ function Texture(renderer: Renderer) {
     return self;
   }
 
-  return createTexture;
+  return {
+    createTexture,
+  };
 }
 
 export { Texture };
