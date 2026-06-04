@@ -31,6 +31,8 @@ export type InstanceMesh = Entity & {
 export type Scene = Entity & {
   isScene: true;
   renderList: DrawableEntity[];
+  transparentRenderList: DrawableEntity[];
+  opaqueRenderList: DrawableEntity[];
   renderListNeedsUpdate: boolean;
   sceneUniformsBuffer: UniformBuffer | null;
   sceneUniformsBindGroup: GPUBindGroup | null;

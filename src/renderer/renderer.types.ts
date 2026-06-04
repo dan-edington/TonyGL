@@ -1,3 +1,4 @@
+import { PerspectiveCamera } from '../camera/camera.types';
 import { Scene } from '../sceneObjects/sceneObjects.types';
 import { ShaderLibrary } from './ShaderLibraryFactory';
 import { TextureLibrary } from './TextureLibraryFactory';
@@ -104,7 +105,7 @@ export type PassContext = {
 export type Pass = {
   name: string;
   route: PassRoute;
-  runPass(commandEncoder: GPUCommandEncoder, scene: Scene, camera: unknown, passContext: PassContext): void;
+  runPass(commandEncoder: GPUCommandEncoder, scene: Scene, camera: PerspectiveCamera, passContext: PassContext): void;
 };
 
 export type PassOptions = {
@@ -117,7 +118,7 @@ export type PassFactory = (options: PassOptions) => Pass;
 
 export type PassManager = {
   scene: Scene | null;
-  camera: unknown | null;
+  camera: PerspectiveCamera | null;
   registerPass(name: string, passFactory: PassFactory, passRoute?: Partial<PassRoute>): void;
   runPass(name: string, commandEncoder: GPUCommandEncoder): void;
   runPasses(passOrder: string[], commandEncoder: GPUCommandEncoder): void;

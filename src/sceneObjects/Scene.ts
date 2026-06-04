@@ -35,6 +35,8 @@ function Scene(context: TonyModuleContext) {
     self.sceneUniformsBindGroup = sceneUniformsBindGroup;
     self.lightManager = lightManager;
     self.renderList = [];
+    self.opaqueRenderList = [];
+    self.transparentRenderList = [];
     self.renderListNeedsUpdate = true;
     self.clearColorSRGB = { r: 0, g: 0, b: 0, a: 1 };
     self.clearColor = { r: 0, g: 0, b: 0, a: 1 };
@@ -70,9 +72,16 @@ function Scene(context: TonyModuleContext) {
       if (!self.renderListNeedsUpdate) return;
 
       self.renderList = [];
+      self.opaqueRenderList = [];
+      self.transparentRenderList = [];
 
       const isDrawableEntity = (node: Entity): node is DrawableEntity => {
         return typeof (node as Partial<DrawableEntity>).draw === 'function';
+      };
+
+      const isTransparentDrawable = (node: DrawableEntity): boolean => {
+        const withMaterial = node as DrawableEntity & { material?: { transparent?: boolean } };
+        return withMaterial?.material?.transparent === true;
       };
 
       const traverse = (node: Entity, parentVisible: boolean) => {
@@ -81,6 +90,12 @@ function Scene(context: TonyModuleContext) {
 
         if (isDrawableEntity(node)) {
           self.renderList.push(node);
+
+          if (isTransparentDrawable(node)) {
+            self.transparentRenderList.push(node);
+          } else {
+            self.opaqueRenderList.push(node);
+          }
         }
 
         node.children.forEach((child) => traverse(child, isVisible));
