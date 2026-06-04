@@ -5,6 +5,14 @@ import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 
 import { TonyGL } from '../../src';
 import { TextureColorSpace } from '../../src/texture/texture.types';
+import { PerspectiveCamera } from '../../src/camera/PerspectiveCamera';
+import { OrbitControls } from '../../src/camera/OrbitControls';
+import { Geometry } from '../../src/geometry/Geometry';
+import { Scene } from '../../src/sceneObjects/Scene';
+import { Mesh } from '../../src/sceneObjects/Mesh';
+import { PointLight } from '../../src/lights/PointLight';
+import { Texture } from '../../src/texture/Texture';
+import { LambertMaterial } from '../../src/materials/LambertMaterial';
 
 const container = document.getElementById('app');
 
@@ -12,12 +20,16 @@ const pane = new Pane();
 pane.registerPlugin(EssentialsPlugin);
 
 if (container) {
-  const tony = await TonyGL({ containerElement: container, alpha: true });
+  const t = await TonyGL({
+    containerElement: container,
+    alpha: true,
+    modules: [PerspectiveCamera, OrbitControls, Scene, Geometry, LambertMaterial, PointLight, Mesh, Texture],
+  });
 
-  const scene = tony.createScene();
+  const scene = t.createScene();
   scene.setClearColor([0.25, 0.25, 0.25, 1]);
 
-  const camera = tony.createPerspectiveCamera({
+  const camera = t.createPerspectiveCamera({
     near: 0.1,
     far: 100,
     fov: (60 * Math.PI) / 180,
@@ -26,7 +38,7 @@ if (container) {
 
   const spherePrimitive = sphere({ radius: 1, nx: 32, ny: 32 });
   function createSphereGeometry() {
-    return tony.createGeometry({
+    return t.createGeometry({
       vertices: spherePrimitive.positions,
       indices: Uint16Array.from(spherePrimitive.cells),
       normals: spherePrimitive.normals,
@@ -37,7 +49,7 @@ if (container) {
   async function loadTexture(url: string, colorSpace: TextureColorSpace = 'srgb') {
     const response = await fetch(url);
     const imageBitmap = await createImageBitmap(await response.blob());
-    const texture = tony.createTextureFromData({
+    const texture = t.createTexture({
       textureData: imageBitmap,
       width: imageBitmap.width,
       height: imageBitmap.height,
@@ -78,18 +90,18 @@ if (container) {
   };
 
   function createLambertMaterial() {
-    return tony.createLambertMaterial({
+    return t.createLambertMaterial({
       transparent: true,
       color: [materialParams.color.r, materialParams.color.g, materialParams.color.b, materialParams.color.a],
-      albedoTexture: materialParams.useAlbedoMap ? albedoTexture : tony.renderer.textureLibrary.getFallback('white'),
-      alphaTexture: materialParams.useAlphaMap ? alphaTexture : tony.renderer.textureLibrary.getFallback('white'),
-      normalTexture: materialParams.useNormalMap ? normalTexture : tony.renderer.textureLibrary.getFallback('normal'),
+      albedoTexture: materialParams.useAlbedoMap ? albedoTexture : t.renderer.textureLibrary.getFallback('white'),
+      alphaTexture: materialParams.useAlphaMap ? alphaTexture : t.renderer.textureLibrary.getFallback('white'),
+      normalTexture: materialParams.useNormalMap ? normalTexture : t.renderer.textureLibrary.getFallback('normal'),
     });
   }
 
   let lambertMaterial = createLambertMaterial();
 
-  const pointLight = tony.createPointLight({
+  const pointLight = t.createPointLight({
     color: [lightParams.color.r, lightParams.color.g, lightParams.color.b, lightParams.color.a],
     intensity: lightParams.intensity,
     range: 30,
@@ -97,12 +109,12 @@ if (container) {
   pointLight.setPosition([lightParams.x, lightParams.y, lightParams.z]);
   pointLight.visible = lightParams.visible;
 
-  let sphereMesh = tony.createMesh(createSphereGeometry(), lambertMaterial);
+  let sphereMesh = t.createMesh(createSphereGeometry(), lambertMaterial);
 
   function rebuildSphereMesh() {
     scene.remove(sphereMesh);
     lambertMaterial = createLambertMaterial();
-    sphereMesh = tony.createMesh(createSphereGeometry(), lambertMaterial);
+    sphereMesh = t.createMesh(createSphereGeometry(), lambertMaterial);
     scene.add(sphereMesh);
   }
 
@@ -117,10 +129,10 @@ if (container) {
 
   camera.setPosition([0, 0, 5]);
   camera.lookAt([0, 0, 0]);
-  tony.createOrbitControls({ camera, domElement: tony.renderer.canvasElement });
+  t.createOrbitControls({ camera, domElement: t.renderer.canvasElement });
 
   function render() {
-    tony.render(scene, camera);
+    t.render(scene, camera);
     requestAnimationFrame(render);
   }
 

@@ -12,7 +12,7 @@ export type TextureLibrary = {
 };
 
 function TextureLibraryFactory(renderer: Renderer): TextureLibrary {
-  const createTexture = Texture(renderer);
+  const { createTexture } = Texture(renderer);
   const textures = new Map<string, TextureType>();
 
   const fallbackTextures = {
