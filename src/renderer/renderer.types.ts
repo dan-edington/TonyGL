@@ -115,11 +115,28 @@ export type PassOptions = {
 
 export type PassFactory = (options: PassOptions) => Pass;
 
+export type PassPosition =
+  | {
+      before: string;
+      after?: never;
+    }
+  | {
+      before?: never;
+      after: string;
+    };
+
+export type RegisterPassOptions = {
+  name: string;
+  passFactory: PassFactory;
+  passRoute?: Partial<PassRoute>;
+  position?: PassPosition;
+};
+
 export type PassManager = {
   scene: Scene | null;
   camera: PerspectiveCamera | null;
   passOrder: string[];
-  registerPass(name: string, passFactory: PassFactory, passRoute?: Partial<PassRoute>): void;
+  registerPass(options: RegisterPassOptions): void;
   runPass(name: string, commandEncoder: GPUCommandEncoder): void;
   runPasses(commandEncoder: GPUCommandEncoder): void;
   createRenderTarget(name: string, width: number, height: number, format: GPUTextureFormat): void;
@@ -127,6 +144,7 @@ export type PassManager = {
   validateRenderTarget(name: string, width: number, height: number, format: GPUTextureFormat): RenderTarget;
   resizeRenderTargets(width: number, height: number): void;
   destroyRenderTargets(): void;
+  setPassPosition(name: string, position: PassPosition): void;
 };
 
 export type CreateTextureFunction = (

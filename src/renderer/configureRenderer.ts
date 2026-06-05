@@ -98,38 +98,39 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer | WebGP
   const linearClampSampler = renderer.samplerLibrary.getSampler('linearClamp');
   if (!linearClampSampler) throw new Error(errorMessages.missingSamplerLibraryDevice);
 
-  renderer.passManager.registerPass(
-    'render',
-    (passOptions) =>
+  renderer.passManager.registerPass({
+    name: 'render',
+    passFactory: (passOptions) =>
       createRenderPass({
         ...passOptions,
         drawEntity(entity: DrawableEntity, passEncoder: GPURenderPassEncoder, rendererInstance: Renderer) {
           entity.draw(passEncoder, rendererInstance);
         },
       }),
-    {
+    passRoute: {
       input: null,
       output: 'scene',
       renderToSwapchain: false,
     },
-  );
+  });
 
-  renderer.passManager.registerPass(
-    'present',
-    (passOptions) =>
+  renderer.passManager.registerPass({
+    name: 'present',
+    passFactory: (passOptions) =>
       createPresentPass({
         ...passOptions,
         shaderModule: presentShader.shaderModule,
         sampler: linearClampSampler,
       }),
-    {
+    passRoute: {
       input: 'scene',
       output: 'present',
       renderToSwapchain: true,
     },
-  );
-
-  renderer.passManager.passOrder = ['render', 'present'];
+    position: {
+      after: 'render',
+    },
+  });
 
   return renderer;
 }

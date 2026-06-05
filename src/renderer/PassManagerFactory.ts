@@ -1,5 +1,13 @@
 import { errorMessages } from '../constants/errorMessages';
-import { Renderer, Pass, PassContext, PassFactory, PassManager, PassRoute, RenderTarget } from './renderer.types';
+import {
+  Renderer,
+  Pass,
+  PassContext,
+  RegisterPassOptions,
+  PassPosition,
+  PassManager,
+  RenderTarget,
+} from './renderer.types';
 
 function PassManagerFactory(renderer: Renderer): PassManager {
   const passes = new Map<string, Pass>();
@@ -18,9 +26,12 @@ function PassManagerFactory(renderer: Renderer): PassManager {
     validateRenderTarget,
     resizeRenderTargets,
     destroyRenderTargets,
+    setPassPosition,
   };
 
-  function registerPass(name: string, passFactory: PassFactory, passRoute?: Partial<PassRoute>) {
+  function registerPass(options: RegisterPassOptions) {
+    const { name, passFactory, passRoute, position } = options;
+
     const pass = passFactory({
       name,
       renderer,
@@ -28,6 +39,50 @@ function PassManagerFactory(renderer: Renderer): PassManager {
     });
 
     passes.set(name, pass);
+
+    if (position) {
+      setPassPosition(name, position);
+    } else {
+      setPassPosition(name, { before: 'present' });
+    }
+  }
+
+  function setPassPosition(name: string, position: PassPosition) {
+    if (!passes.get(name)) {
+      console.warn(`Pass ${name} not found.`);
+      return;
+    }
+
+    const isBefore = !!position.before;
+    const dstName = (position.after || position.before)!;
+
+    // If pass exists in the array it needs removing first
+    const srcIndex = self.passOrder.indexOf(name);
+    if (srcIndex >= 0) self.passOrder.splice(srcIndex, 1);
+
+    const dstIndex = self.passOrder.indexOf(dstName);
+
+    if (self.passOrder.length === 0) {
+      // First item should just be pushed
+      self.passOrder.push(name);
+      return;
+    }
+
+    if (dstIndex === -1) {
+      // Destination not found. Add pass before present and show warning
+      console.warn(`Pass ${dstName} does not exist in pass list. Adding to end.`);
+      self.passOrder.splice(self.passOrder.length - 1, 0, name);
+      return;
+    }
+
+    if (!isBefore && dstName === 'present') {
+      // Attempting to add pass after present. Add pass before present and show warning.
+      console.warn(`Cannot add pass ${name} after present pass. Adding before.`);
+      self.passOrder.splice(dstIndex - 1, 0, name);
+      return;
+    }
+
+    self.passOrder.splice(dstIndex + (isBefore ? 0 : 1), 0, name);
   }
 
   function getRenderTarget(name: string): RenderTarget | null {
