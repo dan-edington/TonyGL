@@ -8,6 +8,7 @@ const constants = {
   },
   MAX_LIGHTS: 16,
   INTERNAL_COLOR_FORMAT: 'rgba16float' as GPUTextureFormat,
+  REQUIRED_SHADERS: ['present'] as string[],
 } as const;
 
 export { constants };
