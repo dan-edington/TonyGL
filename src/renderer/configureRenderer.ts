@@ -1,15 +1,7 @@
 import { errorMessages } from '../constants/errorMessages';
 import { initializeBindGroupLayouts } from './initializeBindGroupLayouts';
 import { createDepthTexture, createMultiSampleTexture } from './internalTextures';
-import { PipelineManagerFactory } from './PipelineManagerFactory';
-import { PassManagerFactory } from './PassManagerFactory';
-import { SamplerLibraryFactory } from './SamplerLibraryFactory';
-import { TextureLibraryFactory } from './TextureLibraryFactory';
-import { ShaderLibraryFactory } from './ShaderLibraryFactory';
-import { createRenderPass } from './passes/renderPass';
-import { createPresentPass } from './passes/presentPass';
 import type { Renderer, WebGPUBase } from './renderer.types';
-import type { DrawableEntity } from '../core/core.types';
 import type { TonyFullOptions, TonyOptions, TonySetupOnlyOptions } from '../TonyGL.types';
 
 function configureRenderer(options: TonySetupOnlyOptions): Promise<WebGPUBase>;
@@ -85,52 +77,6 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer | WebGP
     },
     timers,
   } as Renderer;
-
-  renderer.samplerLibrary = SamplerLibraryFactory(renderer);
-  renderer.textureLibrary = TextureLibraryFactory(renderer);
-  renderer.shaderLibrary = ShaderLibraryFactory(renderer);
-  renderer.pipelineManager = PipelineManagerFactory(renderer);
-  renderer.passManager = PassManagerFactory(renderer);
-
-  const presentShader = renderer.shaderLibrary.getShader('present');
-  if (!presentShader) throw new Error(errorMessages.missingShaderCode);
-
-  const linearClampSampler = renderer.samplerLibrary.getSampler('linearClamp');
-  if (!linearClampSampler) throw new Error(errorMessages.missingSamplerLibraryDevice);
-
-  renderer.passManager.registerPass({
-    name: 'render',
-    passFactory: (passOptions) =>
-      createRenderPass({
-        ...passOptions,
-        drawEntity(entity: DrawableEntity, passEncoder: GPURenderPassEncoder, rendererInstance: Renderer) {
-          entity.draw(passEncoder, rendererInstance);
-        },
-      }),
-    passRoute: {
-      input: null,
-      output: 'scene',
-      renderToSwapchain: false,
-    },
-  });
-
-  renderer.passManager.registerPass({
-    name: 'present',
-    passFactory: (passOptions) =>
-      createPresentPass({
-        ...passOptions,
-        shaderModule: presentShader.shaderModule,
-        sampler: linearClampSampler,
-      }),
-    passRoute: {
-      input: 'scene',
-      output: 'present',
-      renderToSwapchain: true,
-    },
-    position: {
-      after: 'render',
-    },
-  });
 
   return renderer;
 }

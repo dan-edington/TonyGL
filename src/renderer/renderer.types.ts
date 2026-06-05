@@ -40,6 +40,7 @@ export type Renderer = WebGPUBase & {
     elapsedTime: number;
     deltaTime: number;
   };
+  rendererEventsAbortController: AbortController;
 };
 
 export type SamplerConfig = {

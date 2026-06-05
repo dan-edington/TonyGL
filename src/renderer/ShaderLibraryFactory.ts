@@ -1,4 +1,6 @@
 import type { uuid } from '../core/core.types';
+import { MaterialType } from '../materials/materials.types';
+import { materialBindGroupLayoutDescriptors } from './bindGroupLayouts/materials';
 import type { Renderer } from './renderer.types';
 
 const shaderIncludes: Record<string, string> = import.meta.glob('../shaders/includes/**/*.wgsl', {
@@ -12,6 +14,8 @@ const shaders: Record<string, string> = import.meta.glob('../shaders/*.wgsl', {
   eager: true,
   import: 'default',
 });
+
+const requiredShaders = ['present'];
 
 const INCLUDE_REGEX = /^\s*\/\/\s*#include\s*(['"])([^'"\r\n]+)\1\s*$/gm;
 
@@ -118,6 +122,13 @@ function ShaderLibraryFactory(renderer: Renderer): ShaderLibrary {
 
     for (const key in shaders) {
       const shaderName = key.replace(basePath, '').replace('.wgsl', '');
+
+      const isRequired = requiredShaders.indexOf(shaderName) > -1;
+
+      if (!isRequired && !materialBindGroupLayoutDescriptors.has(shaderName as MaterialType)) {
+        continue;
+      }
+
       const shaderPath = key.replace(basePath, '');
       const shaderContent = shaders[key];
       const resolvedShaderContent = resolveIncludes(shaderContent, shaderPath);

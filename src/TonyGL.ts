@@ -6,7 +6,7 @@ import { PipelineManagerFactory } from './renderer/PipelineManagerFactory';
 import { EntityFactory } from './core/EntityFactory';
 import { UniformBufferFactory } from './core/UniformBufferFactory';
 import { initialiseFrameTimers } from './renderer/frameTimers';
-import type { WebGPUBase } from './renderer/renderer.types';
+import type { Renderer, WebGPUBase } from './renderer/renderer.types';
 import type { Scene } from './sceneObjects/sceneObjects.types';
 import type { PerspectiveCamera } from './camera/camera.types';
 import type {
@@ -17,6 +17,14 @@ import type {
   TonyWithModules,
 } from './TonyGL.types';
 import { initializeMaterialBindGroupLayouts } from './renderer/initializeBindGroupLayouts';
+import { ShaderLibraryFactory } from './renderer/ShaderLibraryFactory';
+import { SamplerLibraryFactory } from './renderer/SamplerLibraryFactory';
+import { TextureLibraryFactory } from './renderer/TextureLibraryFactory';
+import { PassManagerFactory } from './renderer/PassManagerFactory';
+import { createRenderPass } from './renderer/passes/renderPass';
+import { DrawableEntity } from './core/core.types';
+import { createPresentPass } from './renderer/passes/presentPass';
+import { errorMessages } from './constants/errorMessages';
 
 function TonyGL(options: TonySetupOnlyOptions): Promise<WebGPUBase>;
 function TonyGL<const M extends readonly ((context: TonyModuleContext) => TonyModule)[]>(
@@ -32,7 +40,6 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
   // Setup Renderer
   const renderer = await configureRenderer(options);
   const frameTimers = initialiseFrameTimers();
-  const { rendererEventsAbortController } = setupRendererEventListeners(renderer);
   const { clearPipelineCache } = PipelineManagerFactory(renderer);
 
   // Setup re-usable Factories
@@ -59,7 +66,7 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
   }
 
   function destroy() {
-    rendererEventsAbortController.abort();
+    renderer.rendererEventsAbortController.abort();
     renderer.depthTexture.texture.destroy();
     renderer.multiSampleTexture.texture.destroy();
     renderer.passManager.destroyRenderTargets();
@@ -84,14 +91,69 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
       });
     }
 
-    postModuleInstall();
+    postModuleInstall(installedModules);
 
     return installedModules;
   }
 
-  function postModuleInstall() {
+  function registerBasePasses() {
+    const presentShader = renderer.shaderLibrary.getShader('present');
+    if (!presentShader) throw new Error(errorMessages.missingShaderCode);
+
+    const linearClampSampler = renderer.samplerLibrary.getSampler('linearClamp');
+    if (!linearClampSampler) throw new Error(errorMessages.missingSamplerLibraryDevice);
+
+    renderer.passManager.registerPass({
+      name: 'render',
+      passFactory: (passOptions) =>
+        createRenderPass({
+          ...passOptions,
+          drawEntity(entity: DrawableEntity, passEncoder: GPURenderPassEncoder, rendererInstance: Renderer) {
+            entity.draw(passEncoder, rendererInstance);
+          },
+        }),
+      passRoute: {
+        input: null,
+        output: 'scene',
+        renderToSwapchain: false,
+      },
+    });
+
+    renderer.passManager.registerPass({
+      name: 'present',
+      passFactory: (passOptions) =>
+        createPresentPass({
+          ...passOptions,
+          shaderModule: presentShader.shaderModule,
+          sampler: linearClampSampler,
+        }),
+      passRoute: {
+        input: 'scene',
+        output: 'present',
+        renderToSwapchain: true,
+      },
+      position: {
+        after: 'render',
+      },
+    });
+  }
+
+  function postModuleInstall(_installedModules: TonyModule[]) {
+    // Libraries and managers
+    renderer.shaderLibrary = ShaderLibraryFactory(renderer);
+    renderer.samplerLibrary = SamplerLibraryFactory(renderer);
+    renderer.textureLibrary = TextureLibraryFactory(renderer);
+    renderer.pipelineManager = PipelineManagerFactory(renderer);
+    renderer.passManager = PassManagerFactory(renderer);
+
     // Create material bind group layouts
     renderer.bindGroupLayouts.materialBindGroupLayouts = initializeMaterialBindGroupLayouts(renderer.device);
+
+    // Register passes
+    registerBasePasses();
+
+    // Setup events
+    renderer.rendererEventsAbortController = setupRendererEventListeners(renderer);
   }
 
   const coreModules = {

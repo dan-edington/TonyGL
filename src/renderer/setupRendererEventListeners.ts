@@ -2,9 +2,9 @@ import { createMultiSampleTexture, createDepthTexture } from './internalTextures
 import type { Renderer } from './renderer.types';
 
 function setupRendererEventListeners(renderer: Renderer) {
-  const abortController = new AbortController();
+  const rendererEventsAbortController = new AbortController();
 
-  window.addEventListener('resize', updateCanvasSize, { signal: abortController.signal });
+  window.addEventListener('resize', updateCanvasSize, { signal: rendererEventsAbortController.signal });
 
   updateCanvasSize();
 
@@ -23,9 +23,7 @@ function setupRendererEventListeners(renderer: Renderer) {
     renderer.passManager.resizeRenderTargets(canvasElement.width, canvasElement.height);
   }
 
-  return {
-    rendererEventsAbortController: abortController,
-  };
+  return rendererEventsAbortController;
 }
 
 export { setupRendererEventListeners };
