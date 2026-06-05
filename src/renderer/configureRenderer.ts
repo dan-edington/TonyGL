@@ -7,7 +7,7 @@ import { SamplerLibraryFactory } from './SamplerLibraryFactory';
 import { TextureLibraryFactory } from './TextureLibraryFactory';
 import { ShaderLibraryFactory } from './ShaderLibraryFactory';
 import { createRenderPass } from './passes/renderPass';
-import { createPostProcessingPass } from './passes/postProcessingPass';
+import { createPresentPass } from './passes/presentPass';
 import type { Renderer, WebGPUBase } from './renderer.types';
 import type { DrawableEntity } from '../core/core.types';
 import type { TonyFullOptions, TonyOptions, TonySetupOnlyOptions } from '../TonyGL.types';
@@ -91,10 +91,9 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer | WebGP
   renderer.shaderLibrary = ShaderLibraryFactory(renderer);
   renderer.pipelineManager = PipelineManagerFactory(renderer);
   renderer.passManager = PassManagerFactory(renderer);
-  renderer.passOrder = ['render', 'postprocessing'];
 
-  const postProcessingShader = renderer.shaderLibrary.getShader('postprocessing');
-  if (!postProcessingShader) throw new Error(errorMessages.missingShaderCode);
+  const presentShader = renderer.shaderLibrary.getShader('present');
+  if (!presentShader) throw new Error(errorMessages.missingShaderCode);
 
   const linearClampSampler = renderer.samplerLibrary.getSampler('linearClamp');
   if (!linearClampSampler) throw new Error(errorMessages.missingSamplerLibraryDevice);
@@ -116,19 +115,21 @@ async function configureRenderer(options: TonyOptions): Promise<Renderer | WebGP
   );
 
   renderer.passManager.registerPass(
-    'postprocessing',
+    'present',
     (passOptions) =>
-      createPostProcessingPass({
+      createPresentPass({
         ...passOptions,
-        shaderModule: postProcessingShader.shaderModule,
+        shaderModule: presentShader.shaderModule,
         sampler: linearClampSampler,
       }),
     {
       input: 'scene',
-      output: 'postprocess',
+      output: 'present',
       renderToSwapchain: true,
     },
   );
+
+  renderer.passManager.passOrder = ['render', 'present'];
 
   return renderer;
 }

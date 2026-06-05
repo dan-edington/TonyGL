@@ -53,7 +53,7 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
 
     renderer.passManager.scene = scene;
     renderer.passManager.camera = camera;
-    renderer.passManager.runPasses(renderer.passOrder, commandEncoder);
+    renderer.passManager.runPasses(commandEncoder);
 
     renderer.device.queue.submit([commandEncoder.finish()]);
   }

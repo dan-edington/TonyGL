@@ -1,5 +1,5 @@
-const postProcessingBindGroupLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
-  label: 'Post-Processing Bind Group Layout',
+const presentPassBindGroupLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
+  label: 'Present Pass Bind Group Layout',
   entries: [
     {
       binding: 0,
@@ -14,4 +14,4 @@ const postProcessingBindGroupLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
   ],
 };
 
-export { postProcessingBindGroupLayoutDescriptor };
+export { presentPassBindGroupLayoutDescriptor };

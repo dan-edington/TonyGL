@@ -1,16 +1,16 @@
 import { constants } from '../../constants/constants';
-import { postProcessingBindGroupLayoutDescriptor } from '../bindGroupLayouts/postprocessing';
+import { presentPassBindGroupLayoutDescriptor } from '../bindGroupLayouts/present';
 import { PipelineManagerFactory } from '../PipelineManagerFactory';
 import { createPass } from './pass';
 import type { Scene } from '../../sceneObjects/sceneObjects.types';
 import type { Pass, PassContext, PassOptions } from '../renderer.types';
 
-type PostProcessingPassOptions = PassOptions & {
+type PresentPassOptions = PassOptions & {
   shaderModule: GPUShaderModule;
   sampler: GPUSampler;
 };
 
-function createPostProcessingPass(options: PostProcessingPassOptions): Pass {
+function createPresentPass(options: PresentPassOptions): Pass {
   const { renderer, shaderModule, sampler } = options;
   const { name, route } = createPass({
     ...options,
@@ -53,10 +53,10 @@ function createPostProcessingPass(options: PostProcessingPassOptions): Pass {
   });
   renderer.device.queue.writeBuffer(normalBuffer, 0, geometry.normals.buffer);
 
-  const bindGroupLayout = renderer.device.createBindGroupLayout(postProcessingBindGroupLayoutDescriptor);
+  const bindGroupLayout = renderer.device.createBindGroupLayout(presentPassBindGroupLayoutDescriptor);
 
   const pipeline = getOrCreateRenderPipeline({
-    label: 'PostProcessing Pipeline',
+    label: 'Present Pass Pipeline',
     shaderModule,
     topology: 'triangle-list',
     format: renderer.presentationFormat,
@@ -84,7 +84,7 @@ function createPostProcessingPass(options: PostProcessingPassOptions): Pass {
 
   function buildBindGroup(inputView: GPUTextureView): GPUBindGroup {
     return renderer.device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(constants.bindGroupIndices.POSTPROCESSING),
+      layout: pipeline.getBindGroupLayout(constants.bindGroupIndices.PRESENT),
       entries: [
         { binding: 0, resource: sampler },
         { binding: 1, resource: inputView },
@@ -110,13 +110,13 @@ function createPostProcessingPass(options: PostProcessingPassOptions): Pass {
     const inputName = route.input;
 
     if (!inputName) {
-      throw new Error('PostProcessingPass route.input is not set');
+      throw new Error('Present Pass route.input is not set');
     }
 
     const inputTarget = passContext.getRenderTarget(inputName);
 
     if (!inputTarget) {
-      throw new Error(`PostProcessingPass: render target "${inputName}" not found`);
+      throw new Error(`Present Pass: render target "${inputName}" not found`);
     }
 
     if (!bindGroup || boundInputView !== inputTarget.view) {
@@ -127,7 +127,7 @@ function createPostProcessingPass(options: PostProcessingPassOptions): Pass {
     const pass = commandEncoder.beginRenderPass(buildPassDescriptor(scene, passContext));
 
     pass.setPipeline(pipeline);
-    pass.setBindGroup(constants.bindGroupIndices.POSTPROCESSING, bindGroup);
+    pass.setBindGroup(constants.bindGroupIndices.PRESENT, bindGroup);
 
     pass.setVertexBuffer(0, vertexBuffer);
     pass.setVertexBuffer(1, normalBuffer);
@@ -147,4 +147,4 @@ function createPostProcessingPass(options: PostProcessingPassOptions): Pass {
   };
 }
 
-export { createPostProcessingPass };
+export { createPresentPass };

@@ -4,10 +4,12 @@ import { Renderer, Pass, PassContext, PassFactory, PassManager, PassRoute, Rende
 function PassManagerFactory(renderer: Renderer): PassManager {
   const passes = new Map<string, Pass>();
   const renderTargets = new Map<string, RenderTarget>();
+  const passOrder: string[] = [];
 
   const self: PassManager = {
     scene: null,
     camera: null,
+    passOrder,
     registerPass,
     runPass,
     runPasses,
@@ -83,8 +85,8 @@ function PassManagerFactory(renderer: Renderer): PassManager {
     pass.runPass(commandEncoder, self.scene, self.camera, buildPassContext(pass));
   }
 
-  function runPasses(passOrder: string[], commandEncoder: GPUCommandEncoder): void {
-    passOrder.forEach((passName) => {
+  function runPasses(commandEncoder: GPUCommandEncoder): void {
+    self.passOrder.forEach((passName) => {
       runPass(passName, commandEncoder);
     });
   }

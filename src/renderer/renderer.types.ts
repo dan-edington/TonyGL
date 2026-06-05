@@ -31,7 +31,6 @@ export type Renderer = WebGPUBase & {
   };
   pipelineManager: PipelineManager;
   passManager: PassManager;
-  passOrder: string[];
   samplerLibrary: SamplerLibrary;
   textureLibrary: TextureLibrary;
   shaderLibrary: ShaderLibrary;
@@ -119,9 +118,10 @@ export type PassFactory = (options: PassOptions) => Pass;
 export type PassManager = {
   scene: Scene | null;
   camera: PerspectiveCamera | null;
+  passOrder: string[];
   registerPass(name: string, passFactory: PassFactory, passRoute?: Partial<PassRoute>): void;
   runPass(name: string, commandEncoder: GPUCommandEncoder): void;
-  runPasses(passOrder: string[], commandEncoder: GPUCommandEncoder): void;
+  runPasses(commandEncoder: GPUCommandEncoder): void;
   createRenderTarget(name: string, width: number, height: number, format: GPUTextureFormat): void;
   getRenderTarget(name: string): RenderTarget | null;
   validateRenderTarget(name: string, width: number, height: number, format: GPUTextureFormat): RenderTarget;
