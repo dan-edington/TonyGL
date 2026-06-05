@@ -7,6 +7,7 @@ Currently supports:
 - Scene graph
 - Perspective camera
 - Indexed and non indexed geometry support
+- Instancing
 - Geometry tangent generation
 - Lambertian material
 - Blinn Phong material
