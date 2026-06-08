@@ -1,4 +1,5 @@
 import { PerspectiveCamera } from '../camera/camera.types';
+import { ComputeTask } from '../compute/compute.types';
 import { Scene } from '../sceneObjects/sceneObjects.types';
 import { ShaderLibrary } from './ShaderLibraryFactory';
 import { TextureLibrary } from './TextureLibraryFactory';
@@ -112,6 +113,8 @@ export type RenderPass = Pass & {
 };
 
 export type ComputePass = Pass & {
+  addTask: (computeTask: ComputeTask, position?: PassPosition) => void;
+  removeTask: (name: string) => void;
   type: 'Compute';
   runPass(commandEncoder: GPUCommandEncoder): void;
 };
@@ -145,7 +148,7 @@ export type PassManager = {
   scene: Scene | null;
   camera: PerspectiveCamera | null;
   passOrder: string[];
-  registerPass(options: RegisterPassOptions): void;
+  registerPass(options: RegisterPassOptions): RenderPass | ComputePass;
   runPass(name: string, commandEncoder: GPUCommandEncoder): void;
   runPasses(commandEncoder: GPUCommandEncoder): void;
   createRenderTarget(name: string, width: number, height: number, format: GPUTextureFormat): void;
@@ -154,6 +157,7 @@ export type PassManager = {
   resizeRenderTargets(width: number, height: number): void;
   destroyRenderTargets(): void;
   setPassPosition(name: string, position: PassPosition): void;
+  getPass(name: string): RenderPass | ComputePass | undefined;
 };
 
 export type CreateTextureFunction = (

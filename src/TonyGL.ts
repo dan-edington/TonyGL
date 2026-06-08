@@ -24,6 +24,7 @@ import { PassManagerFactory } from './renderer/PassManagerFactory';
 import { createScenePass } from './renderer/passes/scenePass';
 import { createPresentPass } from './renderer/passes/presentPass';
 import { errorMessages } from './constants/errorMessages';
+import { createComputePass } from './renderer/passes/computePass';
 
 function TonyGL(options: TonySetupOnlyOptions): Promise<WebGPUBase>;
 function TonyGL<const M extends readonly ((context: TonyModuleContext) => TonyModule)[]>(
@@ -120,6 +121,14 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
       },
       position: {
         after: 'scene',
+      },
+    });
+
+    renderer.passManager.registerPass({
+      name: 'compute',
+      passFactory: createComputePass(),
+      position: {
+        before: 'scene',
       },
     });
   }

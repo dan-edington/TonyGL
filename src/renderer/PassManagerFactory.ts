@@ -28,9 +28,10 @@ function PassManagerFactory(renderer: Renderer): PassManager {
     resizeRenderTargets,
     destroyRenderTargets,
     setPassPosition,
+    getPass,
   };
 
-  function registerPass(options: RegisterPassOptions) {
+  function registerPass(options: RegisterPassOptions): RenderPass | ComputePass {
     const { name, passFactory, passRoute, position } = options;
 
     const pass = passFactory({
@@ -46,6 +47,8 @@ function PassManagerFactory(renderer: Renderer): PassManager {
     } else {
       setPassPosition(name, { before: 'present' });
     }
+
+    return pass;
   }
 
   function setPassPosition(name: string, position: PassPosition) {
@@ -161,6 +164,10 @@ function PassManagerFactory(renderer: Renderer): PassManager {
     });
 
     renderTargets.clear();
+  }
+
+  function getPass(passName: string) {
+    return passes.get(passName);
   }
 
   return self;
