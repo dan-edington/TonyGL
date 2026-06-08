@@ -119,17 +119,6 @@ function PassManagerFactory(renderer: Renderer): PassManager {
     return renderTargets.get(name)!;
   }
 
-  function buildPassContext(pass: Pass): PassContext {
-    return {
-      route: pass.route,
-      getRenderTarget,
-      getSwapChainView: () => renderer.context.getCurrentTexture().createView(),
-      validateRenderTarget,
-      width: renderer.canvasElement.width,
-      height: renderer.canvasElement.height,
-    };
-  }
-
   function runPass(name: string, commandEncoder: GPUCommandEncoder): void {
     const pass = passes.get(name);
 
@@ -137,7 +126,16 @@ function PassManagerFactory(renderer: Renderer): PassManager {
     if (!self.scene) throw new Error(errorMessages.missingPassScene);
     if (!self.camera) throw new Error(errorMessages.missingPassCamera);
 
-    pass.runPass(commandEncoder, self.scene, self.camera, buildPassContext(pass));
+    const passContext: PassContext = {
+      route: pass.route,
+      getRenderTarget,
+      getSwapChainView: () => renderer.context.getCurrentTexture().createView(),
+      validateRenderTarget,
+      width: renderer.canvasElement.width,
+      height: renderer.canvasElement.height,
+    };
+
+    pass.runPass(commandEncoder, self.scene, self.camera, passContext);
   }
 
   function runPasses(commandEncoder: GPUCommandEncoder): void {
