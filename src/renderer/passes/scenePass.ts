@@ -5,7 +5,7 @@ import type { Pass, PassContext, PassOptions, Renderer } from '../renderer.types
 import type { PerspectiveCamera } from '../../camera/camera.types';
 import type { DrawableEntity } from '../../core/core.types';
 
-type RenderPassOptions = PassOptions & {
+type ScenePassOptions = PassOptions & {
   drawEntity(
     entity: DrawableEntity,
     passEncoder: GPURenderPassEncoder,
@@ -14,7 +14,7 @@ type RenderPassOptions = PassOptions & {
   ): void;
 };
 
-function createRenderPass(options: RenderPassOptions): Pass {
+function createScenePass(options: ScenePassOptions): Pass {
   const { renderer, drawEntity } = options;
   const { name, route } = createPass(options);
 
@@ -43,11 +43,11 @@ function createRenderPass(options: RenderPassOptions): Pass {
     });
   }
 
-  function buildRenderPassDescriptor(scene: Scene, passContext: PassContext): GPURenderPassDescriptor {
+  function buildScenePassDescriptor(scene: Scene, passContext: PassContext): GPURenderPassDescriptor {
     const outputName = passContext.route.output;
 
     if (!outputName) {
-      throw new Error('RenderPass route.output is not defined.');
+      throw new Error('ScenePass route.output is not defined.');
     }
 
     const msaaEnabled = renderer.msaa > 1;
@@ -90,7 +90,7 @@ function createRenderPass(options: RenderPassOptions): Pass {
   ): void {
     const cameraWithBindGroup = camera as PerspectiveCamera;
 
-    const pass = commandEncoder.beginRenderPass(buildRenderPassDescriptor(scene, passContext));
+    const pass = commandEncoder.beginRenderPass(buildScenePassDescriptor(scene, passContext));
     pass.setBindGroup(constants.bindGroupIndices.CAMERA, cameraWithBindGroup.cameraUniformsBindGroup);
     pass.setBindGroup(constants.bindGroupIndices.SCENE, scene.sceneUniformsBindGroup);
 
@@ -114,4 +114,4 @@ function createRenderPass(options: RenderPassOptions): Pass {
   };
 }
 
-export { createRenderPass };
+export { createScenePass };

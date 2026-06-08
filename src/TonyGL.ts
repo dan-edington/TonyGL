@@ -21,7 +21,7 @@ import { ShaderLibraryFactory } from './renderer/ShaderLibraryFactory';
 import { SamplerLibraryFactory } from './renderer/SamplerLibraryFactory';
 import { TextureLibraryFactory } from './renderer/TextureLibraryFactory';
 import { PassManagerFactory } from './renderer/PassManagerFactory';
-import { createRenderPass } from './renderer/passes/renderPass';
+import { createScenePass } from './renderer/passes/scenePass';
 import { DrawableEntity } from './core/core.types';
 import { createPresentPass } from './renderer/passes/presentPass';
 import { errorMessages } from './constants/errorMessages';
@@ -106,7 +106,7 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
     renderer.passManager.registerPass({
       name: 'render',
       passFactory: (passOptions) =>
-        createRenderPass({
+        createScenePass({
           ...passOptions,
           drawEntity(entity: DrawableEntity, passEncoder: GPURenderPassEncoder, rendererInstance: Renderer) {
             entity.draw(passEncoder, rendererInstance);
