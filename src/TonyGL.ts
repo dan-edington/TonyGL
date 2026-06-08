@@ -6,7 +6,7 @@ import { PipelineManagerFactory } from './renderer/PipelineManagerFactory';
 import { EntityFactory } from './core/EntityFactory';
 import { UniformBufferFactory } from './core/UniformBufferFactory';
 import { initialiseFrameTimers } from './renderer/frameTimers';
-import type { Renderer, WebGPUBase } from './renderer/renderer.types';
+import type { WebGPUBase } from './renderer/renderer.types';
 import type { Scene } from './sceneObjects/sceneObjects.types';
 import type { PerspectiveCamera } from './camera/camera.types';
 import type {
@@ -22,7 +22,6 @@ import { SamplerLibraryFactory } from './renderer/SamplerLibraryFactory';
 import { TextureLibraryFactory } from './renderer/TextureLibraryFactory';
 import { PassManagerFactory } from './renderer/PassManagerFactory';
 import { createScenePass } from './renderer/passes/scenePass';
-import { DrawableEntity } from './core/core.types';
 import { createPresentPass } from './renderer/passes/presentPass';
 import { errorMessages } from './constants/errorMessages';
 
@@ -105,13 +104,7 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
 
     renderer.passManager.registerPass({
       name: 'scene',
-      passFactory: (passOptions) =>
-        createScenePass({
-          ...passOptions,
-          drawEntity(entity: DrawableEntity, passEncoder: GPURenderPassEncoder, rendererInstance: Renderer) {
-            entity.draw(passEncoder, rendererInstance);
-          },
-        }),
+      passFactory: createScenePass(renderer),
       passRoute: {
         input: null,
         output: 'scene',
@@ -120,12 +113,7 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
 
     renderer.passManager.registerPass({
       name: 'present',
-      passFactory: (passOptions) =>
-        createPresentPass({
-          ...passOptions,
-          shaderModule: presentShader.shaderModule,
-          sampler: linearClampSampler,
-        }),
+      passFactory: createPresentPass(presentShader.shaderModule, linearClampSampler),
       passRoute: {
         input: 'scene',
         output: 'present',
