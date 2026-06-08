@@ -1,16 +1,17 @@
 import { errorMessages } from '../constants/errorMessages';
 import {
   Renderer,
-  Pass,
+  RenderPass,
   PassContext,
   RegisterPassOptions,
   PassPosition,
   PassManager,
   RenderTarget,
+  ComputePass,
 } from './renderer.types';
 
 function PassManagerFactory(renderer: Renderer): PassManager {
-  const passes = new Map<string, Pass>();
+  const passes = new Map<string, RenderPass | ComputePass>();
   const renderTargets = new Map<string, RenderTarget>();
   const passOrder: string[] = [];
 
@@ -135,7 +136,11 @@ function PassManagerFactory(renderer: Renderer): PassManager {
       height: renderer.canvasElement.height,
     };
 
-    pass.runPass(commandEncoder, self.scene, self.camera, passContext);
+    if (pass.type === 'Render') {
+      pass.runPass(commandEncoder, self.scene, self.camera, passContext);
+    } else if (pass.type === 'Compute') {
+      pass.runPass(commandEncoder);
+    }
   }
 
   function runPasses(commandEncoder: GPUCommandEncoder): void {

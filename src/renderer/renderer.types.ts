@@ -102,10 +102,19 @@ export type PassContext = {
   height: number;
 };
 
-export type Pass = {
+type Pass = {
   name: string;
   route: PassRoute;
+};
+
+export type RenderPass = Pass & {
+  type: 'Render';
   runPass(commandEncoder: GPUCommandEncoder, scene: Scene, camera: PerspectiveCamera, passContext: PassContext): void;
+};
+
+export type ComputePass = Pass & {
+  type: 'Compute';
+  runPass(commandEncoder: GPUCommandEncoder): void;
 };
 
 export type PassOptions = {
@@ -114,7 +123,7 @@ export type PassOptions = {
   passRoute?: Partial<PassRoute>;
 };
 
-export type PassFactory = (options: PassOptions) => Pass;
+export type PassFactory = (options: PassOptions) => RenderPass | ComputePass;
 
 export type PassPosition =
   | {

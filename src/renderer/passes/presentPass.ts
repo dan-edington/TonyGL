@@ -3,14 +3,14 @@ import { presentPassBindGroupLayoutDescriptor } from '../bindGroupLayouts/presen
 import { PipelineManagerFactory } from '../PipelineManagerFactory';
 import { createPass } from './pass';
 import type { Scene } from '../../sceneObjects/sceneObjects.types';
-import type { Pass, PassContext, PassOptions } from '../renderer.types';
+import type { RenderPass, PassContext, PassOptions } from '../renderer.types';
 
 type PresentPassOptions = PassOptions & {
   shaderModule: GPUShaderModule;
   sampler: GPUSampler;
 };
 
-function createPresentPass(options: PresentPassOptions): Pass {
+function createPresentPass(options: PresentPassOptions): RenderPass {
   const { renderer, shaderModule, sampler } = options;
   const { name, route } = createPass({
     ...options,
@@ -144,6 +144,7 @@ function createPresentPass(options: PresentPassOptions): Pass {
     name,
     route,
     runPass,
+    type: 'Render',
   };
 }
 

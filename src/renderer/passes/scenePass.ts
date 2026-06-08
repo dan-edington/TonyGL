@@ -1,7 +1,7 @@
 import { constants } from '../../constants/constants';
 import { createPass } from './pass';
 import type { Scene } from '../../sceneObjects/sceneObjects.types';
-import type { Pass, PassContext, PassOptions, Renderer } from '../renderer.types';
+import type { RenderPass, PassContext, PassOptions, Renderer } from '../renderer.types';
 import type { PerspectiveCamera } from '../../camera/camera.types';
 import type { DrawableEntity } from '../../core/core.types';
 
@@ -14,7 +14,7 @@ type ScenePassOptions = PassOptions & {
   ): void;
 };
 
-function createScenePass(options: ScenePassOptions): Pass {
+function createScenePass(options: ScenePassOptions): RenderPass {
   const { renderer, drawEntity } = options;
   const { name, route } = createPass(options);
 
@@ -111,6 +111,7 @@ function createScenePass(options: ScenePassOptions): Pass {
     name,
     route,
     runPass,
+    type: 'Render',
   };
 }
 

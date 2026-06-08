@@ -1,6 +1,6 @@
-import type { Pass, PassOptions } from '../renderer.types';
+import type { RenderPass, PassOptions } from '../renderer.types';
 
-function createPass(options: PassOptions): Pick<Pass, 'name' | 'route'> {
+function createPass(options: PassOptions): Pick<RenderPass, 'name' | 'route'> {
   return {
     name: options.name,
     route: {
