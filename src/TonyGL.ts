@@ -104,7 +104,7 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
     if (!linearClampSampler) throw new Error(errorMessages.missingSamplerLibraryDevice);
 
     renderer.passManager.registerPass({
-      name: 'render',
+      name: 'scene',
       passFactory: (passOptions) =>
         createScenePass({
           ...passOptions,
@@ -115,7 +115,6 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
       passRoute: {
         input: null,
         output: 'scene',
-        renderToSwapchain: false,
       },
     });
 
@@ -130,10 +129,9 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
       passRoute: {
         input: 'scene',
         output: 'present',
-        renderToSwapchain: true,
       },
       position: {
-        after: 'render',
+        after: 'scene',
       },
     });
   }

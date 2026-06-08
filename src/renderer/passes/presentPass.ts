@@ -15,7 +15,6 @@ function createPresentPass(options: PresentPassOptions): RenderPass {
   const { name, route } = createPass({
     ...options,
     passRoute: {
-      renderToSwapchain: true,
       ...options.passRoute,
     },
   });

@@ -6,7 +6,6 @@ function createPass(options: PassOptions): Pick<RenderPass, 'name' | 'route'> {
     route: {
       input: options.passRoute?.input ?? null,
       output: options.passRoute?.output ?? null,
-      renderToSwapchain: options.passRoute?.renderToSwapchain ?? false,
     },
   };
 }

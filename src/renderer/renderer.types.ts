@@ -90,7 +90,6 @@ export type RenderTarget = {
 export type PassRoute = {
   input: string | null;
   output: string | null;
-  renderToSwapchain: boolean;
 };
 
 export type PassContext = {
