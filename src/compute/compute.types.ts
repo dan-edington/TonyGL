@@ -4,6 +4,7 @@ export type ComputeTask = {
   name: string;
   enabled: boolean;
   compute(pass: GPUComputePassEncoder): void;
+  rebindBuffers(buffers: UniformBuffer[]): void;
 };
 
 export type CreateComputeTaskOptions = {

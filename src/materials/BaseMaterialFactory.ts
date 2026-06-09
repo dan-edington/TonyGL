@@ -24,8 +24,7 @@ export function BaseMaterialFactory(renderer: Renderer) {
   function createBaseMaterial<T extends BaseMaterial = BaseMaterial>(options: BaseMaterialOptions): T {
     const id = crypto.randomUUID();
     const type = options.type;
-    const materialBuffers = options.buffers ?? [];
-    const materialUniformsBuffer = materialBuffers[0] ?? null;
+    let materialBuffers = options.buffers ?? [];
     const shaderIdentifier =
       type === 'custom' ? renderer.shaderLibrary.buildCustomShader({ shader: options.shader, id }) : options.shader;
 
@@ -40,15 +39,16 @@ export function BaseMaterialFactory(renderer: Renderer) {
       throw new Error(`Material bind group layout missing for type: ${type}`);
     }
 
-    const entries = options.buildBindGroupEntries(materialBuffers);
+    const createMaterialBindGroup = (buffers: UniformBuffer[]) => {
+      const entries = options.buildBindGroupEntries(buffers);
 
-    const materialUniformsBindGroup =
-      entries.length > 0
-        ? renderer.device.createBindGroup({
-            layout: materialBindGroupLayout,
-            entries,
-          })
-        : null;
+      if (entries.length === 0) return null;
+
+      return renderer.device.createBindGroup({
+        layout: materialBindGroupLayout,
+        entries,
+      });
+    };
 
     const self: BaseMaterial = {
       id,
@@ -56,14 +56,19 @@ export function BaseMaterialFactory(renderer: Renderer) {
       shader: shaderIdentifier,
       shaderModule: cachedShader.shaderModule,
       materialBindGroupLayout,
-      materialUniformsBuffer,
-      materialUniformsBindGroup,
+      materialUniformsBuffer: materialBuffers[0] ?? null,
+      materialUniformsBindGroup: createMaterialBindGroup(materialBuffers),
       transparent: options.transparent ?? false,
       doubleSided: options.doubleSided ?? false,
       depthWrite: options.depthWrite ?? true,
       usesAlphaPipeline: options.transparent ?? false,
       updateUniforms(updatedUniforms) {
         self.materialUniformsBuffer?.updateUniforms(updatedUniforms);
+      },
+      rebindBuffers(updatedBuffers) {
+        materialBuffers = updatedBuffers;
+        self.materialUniformsBuffer = materialBuffers[0] ?? null;
+        self.materialUniformsBindGroup = createMaterialBindGroup(materialBuffers);
       },
       writeBuffers() {
         for (const materialBuffer of materialBuffers) {

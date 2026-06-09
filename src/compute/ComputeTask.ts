@@ -20,11 +20,12 @@ function ComputeTask(context: TonyModuleContext) {
       name,
       enabled,
       compute,
+      rebindBuffers,
     };
 
     const computeShaderModule = createShaderModule(name, shaderCode);
     const computePipeline = createComputePipeline(name, computeShaderModule, shaderEntryPoint);
-    const computeBindGroup = createComputeBindGroup(name, buffers, computePipeline);
+    let computeBindGroup = createComputeBindGroup(name, buffers, computePipeline);
 
     if (workgroupSize.length < 3) workgroupSize.push(...Array(3 - workgroupSize.length).fill(1));
     if (dispatchSize.length < 3) dispatchSize.push(...Array(3 - dispatchSize.length).fill(1));
@@ -37,6 +38,10 @@ function ComputeTask(context: TonyModuleContext) {
         Math.ceil(dispatchSize[1]! / workgroupSize[1]!),
         Math.ceil(dispatchSize[2]! / workgroupSize[2]!),
       );
+    }
+
+    function rebindBuffers(nextBuffers: UniformBuffer[]) {
+      computeBindGroup = createComputeBindGroup(name, nextBuffers, computePipeline);
     }
 
     return self;
@@ -65,17 +70,21 @@ function ComputeTask(context: TonyModuleContext) {
   }
 
   function createComputeBindGroup(name: string, buffers: UniformBuffer[], pipeline: GPUComputePipeline) {
+    const entries: GPUBindGroupEntry[] = [];
+
+    buffers.forEach((buffer, index) => {
+      if (!buffer.buffer) return;
+
+      entries.push({
+        binding: index,
+        resource: { buffer: buffer.buffer },
+      });
+    });
+
     const computeBindGroup = renderer.device.createBindGroup({
       label: `${name} compute bind group`,
       layout: pipeline.getBindGroupLayout(0),
-      entries: buffers
-        .filter((buffer) => buffer.buffer !== null)
-        .map((buffer, i) => {
-          return {
-            binding: i,
-            resource: buffer.buffer!,
-          };
-        }),
+      entries,
     });
 
     return computeBindGroup;

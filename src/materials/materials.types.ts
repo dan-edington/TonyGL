@@ -15,6 +15,7 @@ export type BaseMaterial = {
   depthWrite: boolean;
   usesAlphaPipeline: boolean;
   updateUniforms(updatedUniforms: Record<string, number | ArrayLike<number>>): void;
+  rebindBuffers(buffers: UniformBuffer[]): void;
   writeBuffers(): void;
   destroy(): void;
 };
