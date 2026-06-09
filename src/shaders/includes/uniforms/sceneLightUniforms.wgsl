@@ -1,3 +1,7 @@
+struct SceneUniforms {
+  _padding: u32,
+};
+
 struct LightUniforms {
   count: u32,
   positions: array<vec4f, 16>,
@@ -10,4 +14,5 @@ struct LightUniforms {
   ambientLightIntensity: f32,
 }
 
+@group(1) @binding(0) var<uniform> sceneUniforms: SceneUniforms;
 @group(1) @binding(1) var<storage, read> lightUniforms: LightUniforms;

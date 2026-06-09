@@ -4,8 +4,7 @@
 // #include  "/includes/vertex/vertexOutputStruct"
 
 // #include "./includes/uniforms/cameraUniforms"
-// #include "./includes/uniforms/sceneUniforms"
-// #include "./includes/uniforms/lightUniforms"
+// #include "./includes/uniforms/sceneLightUniforms"
 // #include "./includes/uniforms/entityUniforms"
 
 // #include "./includes/BRDF/blinnPhongBRDF"
