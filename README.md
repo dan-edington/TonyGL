@@ -8,6 +8,7 @@ Currently supports:
 - Perspective camera
 - Indexed and non indexed geometry support
 - Instancing
+- Compute Tasks
 - Geometry tangent generation
 - Lambertian material
 - Blinn Phong material
