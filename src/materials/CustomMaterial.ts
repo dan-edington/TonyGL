@@ -1,20 +1,20 @@
 import { BaseMaterialFactory } from './BaseMaterialFactory';
-import type { UniformBuffer, UniformObject } from '../core/core.types';
+import type { UniformBuffer } from '../core/core.types';
 import type { CustomMaterial as CustomMaterialType } from './materials.types';
 import { TonyModuleContext } from '../TonyGL.types';
 
 export type CustomMaterialOptions = {
   shader: string;
-  uniforms?: UniformObject;
+  buffers?: UniformBuffer[];
   transparent?: boolean;
   doubleSided?: boolean;
   depthWrite?: boolean;
 };
 
 function CustomMaterial(context: TonyModuleContext) {
-  const { renderer, registerMaterialLayoutDescriptor, createUniformBuffer } = context;
+  const { renderer, registerMaterialLayoutDescriptor } = context;
 
-  const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
+  const { createBaseMaterial } = BaseMaterialFactory(renderer);
 
   const customMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
     label: 'CustomMaterial Bind Group Layout',
@@ -30,8 +30,9 @@ function CustomMaterial(context: TonyModuleContext) {
       transparent: options.transparent ?? false,
       doubleSided: options.doubleSided ?? false,
       depthWrite: options.depthWrite ?? true,
-      uniforms: options.uniforms,
-      buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
+      buffers: options.buffers ?? [],
+      buildBindGroupEntries(materialBuffers: UniformBuffer[]) {
+        const materialUniformsBuffer = materialBuffers[0];
         if (!materialUniformsBuffer?.buffer) return [];
         return [{ binding: 0, resource: { buffer: materialUniformsBuffer.buffer } }];
       },
