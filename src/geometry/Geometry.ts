@@ -6,8 +6,8 @@ export type GeometryOptions = {
   name?: string;
   vertices: Float32Array;
   indices?: Uint16Array | Uint32Array;
-  normals: Float32Array;
-  uvs: Float32Array;
+  normals?: Float32Array;
+  uvs?: Float32Array;
   topology?: GPUPrimitiveTopology;
 };
 
@@ -43,9 +43,39 @@ function Geometry(context: TonyModuleContext) {
     }
 
     const vertices = padArrayToAlignmentBytes<Float32Array>(options.vertices, { alignmentBytes: 4 }).paddedArray;
-    const normals = padArrayToAlignmentBytes<Float32Array>(options.normals, { alignmentBytes: 4 }).paddedArray;
-    const uvs = padArrayToAlignmentBytes<Float32Array>(options.uvs, { alignmentBytes: 4 }).paddedArray;
-    const tangents = generateTangents();
+    const vertexCount = vertices.length / 3;
+
+    let normals: Float32Array<ArrayBufferLike>,
+      uvs: Float32Array<ArrayBufferLike>,
+      tangents: Float32Array<ArrayBufferLike>;
+
+    if (options.normals) {
+      normals = padArrayToAlignmentBytes<Float32Array>(options.normals, {
+        alignmentBytes: 4,
+      }).paddedArray;
+    } else {
+      normals = padArrayToAlignmentBytes<Float32Array>(new Float32Array(vertexCount * 3).fill(0), {
+        alignmentBytes: 4,
+      }).paddedArray;
+    }
+
+    if (options.uvs) {
+      uvs = padArrayToAlignmentBytes<Float32Array>(options.uvs, {
+        alignmentBytes: 4,
+      }).paddedArray;
+    } else {
+      uvs = padArrayToAlignmentBytes<Float32Array>(new Float32Array(vertexCount * 2).fill(0), {
+        alignmentBytes: 4,
+      }).paddedArray;
+    }
+
+    if (!options.uvs || !options.normals) {
+      tangents = padArrayToAlignmentBytes<Float32Array>(new Float32Array(vertexCount * 4).fill(0), {
+        alignmentBytes: 4,
+      }).paddedArray;
+    } else {
+      tangents = generateTangents();
+    }
 
     vertexBuffer = renderer.device.createBuffer({
       size: vertices.byteLength,
