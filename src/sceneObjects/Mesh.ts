@@ -16,7 +16,8 @@ function Mesh(context: TonyModuleContext) {
       type: 'Mesh',
     });
 
-    const materialBindGroupLayout = renderer.bindGroupLayouts.materialBindGroupLayouts?.get(material.type);
+    const materialBindGroupLayout =
+      material.materialBindGroupLayout ?? renderer.bindGroupLayouts.materialBindGroupLayouts?.get(material.type);
 
     if (!materialBindGroupLayout) {
       throw new Error(`Material bind group layout missing for type: ${material.type}`);

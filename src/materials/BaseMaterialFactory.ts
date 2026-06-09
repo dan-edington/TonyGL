@@ -13,6 +13,7 @@ export type BaseMaterialOptions = {
   type: MaterialType;
   shader: string;
   buffers?: UniformBuffer[];
+  bindGroupLayout?: GPUBindGroupLayout;
   transparent?: boolean;
   doubleSided?: boolean;
   depthWrite?: boolean;
@@ -33,7 +34,8 @@ export function BaseMaterialFactory(renderer: Renderer) {
       throw new Error('Could not find shader code for material.');
     }
 
-    const materialBindGroupLayout = renderer.bindGroupLayouts.materialBindGroupLayouts?.get(type);
+    const materialBindGroupLayout =
+      options.bindGroupLayout ?? renderer.bindGroupLayouts.materialBindGroupLayouts?.get(type) ?? null;
     if (!materialBindGroupLayout) {
       throw new Error(`Material bind group layout missing for type: ${type}`);
     }
@@ -53,6 +55,7 @@ export function BaseMaterialFactory(renderer: Renderer) {
       type,
       shader: shaderIdentifier,
       shaderModule: cachedShader.shaderModule,
+      materialBindGroupLayout,
       materialUniformsBuffer,
       materialUniformsBindGroup,
       transparent: options.transparent ?? false,

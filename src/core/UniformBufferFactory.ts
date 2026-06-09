@@ -21,6 +21,7 @@ function UniformBufferFactory(renderer: Renderer) {
     const self: UniformBuffer = {
       id,
       type,
+      addressSpace,
       buffer: renderer.device.createBuffer({
         size: bufferData.byteLength,
         usage,

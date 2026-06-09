@@ -75,6 +75,7 @@ export type UniformObject = Record<string, UniformValue>;
 export type UniformBuffer = {
   id: uuid;
   type: string;
+  addressSpace: BufferAddressSpace;
   buffer: GPUBuffer | null;
   uniforms: Record<string, UniformValue>;
   bufferData: ArrayBuffer | null;

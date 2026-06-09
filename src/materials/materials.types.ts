@@ -7,6 +7,7 @@ export type BaseMaterial = {
   type: MaterialType;
   shader: string;
   shaderModule: GPUShaderModule;
+  materialBindGroupLayout: GPUBindGroupLayout | null;
   materialUniformsBuffer: UniformBuffer | null;
   materialUniformsBindGroup: GPUBindGroup | null;
   transparent: boolean;
