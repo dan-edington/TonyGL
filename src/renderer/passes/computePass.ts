@@ -15,8 +15,16 @@ function createComputePass() {
     const computeTasksOrder: string[] = [];
 
     function runPass(commandEncoder: GPUCommandEncoder): void {
-      // const pass = commandEncoder.beginComputePass({ label: name });
-      // pass.end();
+      const pass = commandEncoder.beginComputePass({ label: name });
+
+      computeTasksOrder.forEach((computeTaskName) => {
+        const computeTask = computeTasks.get(computeTaskName);
+        if (computeTask && computeTask.enabled) {
+          computeTask.compute(pass);
+        }
+      });
+
+      pass.end();
     }
 
     function addTask(computeTask: ComputeTask, position?: PassPosition) {
@@ -48,14 +56,12 @@ function createComputePass() {
     }
 
     return {
+      type: 'Compute',
       name,
       route,
       runPass,
       addTask,
       removeTask,
-      type: 'Compute',
-      computeTasksOrder,
-      computeTasks,
     };
   };
 }
