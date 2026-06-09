@@ -20,3 +20,12 @@ export type Geometry = {
   uvBuffer: GPUBuffer | null;
   destroy: () => void;
 };
+
+export type GeometryOptions = {
+  name?: string;
+  vertices: Float32Array;
+  indices?: Uint16Array | Uint32Array;
+  normals?: Float32Array;
+  uvs?: Float32Array;
+  topology?: GPUPrimitiveTopology;
+};

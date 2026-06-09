@@ -1,15 +1,6 @@
 import { padArrayToAlignmentBytes } from '../utilities/padArrayToAlignmentBytes';
-import type { Geometry } from './geometry.types';
-import { TonyModuleContext } from '../TonyGL.types';
-
-export type GeometryOptions = {
-  name?: string;
-  vertices: Float32Array;
-  indices?: Uint16Array | Uint32Array;
-  normals?: Float32Array;
-  uvs?: Float32Array;
-  topology?: GPUPrimitiveTopology;
-};
+import type { Geometry, GeometryOptions } from './geometry.types';
+import type { TonyModuleContext } from '../TonyGL.types';
 
 function Geometry(context: TonyModuleContext) {
   const { renderer } = context;
