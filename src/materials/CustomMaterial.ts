@@ -21,12 +21,12 @@ function CustomMaterial(context: TonyModuleContext) {
 
     const bindGroupLayout = renderer.device.createBindGroupLayout({
       label: 'CustomMaterial Bind Group Layout',
-      entries: buffers.map((buf, index) => ({
+      entries: buffers.map((buffer, index) => ({
         binding: index,
         visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
         buffer: {
           type:
-            buf.addressSpace === 'storage'
+            buffer.addressSpace === 'storage'
               ? ('read-only-storage' as GPUBufferBindingType)
               : ('uniform' as GPUBufferBindingType),
         },
@@ -43,8 +43,8 @@ function CustomMaterial(context: TonyModuleContext) {
       bindGroupLayout,
       buildBindGroupEntries(materialBuffers: UniformBuffer[]) {
         return materialBuffers
-          .filter((buf) => buf.buffer !== null)
-          .map((buf, index) => ({ binding: index, resource: { buffer: buf.buffer! } }));
+          .filter((buffer) => buffer.buffer !== null)
+          .map((buffer, index) => ({ binding: index, resource: { buffer: buffer.buffer! } }));
       },
     });
 
