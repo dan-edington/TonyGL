@@ -150,8 +150,7 @@ function ShaderLibraryFactory(renderer: Renderer): ShaderLibrary {
 
     const finalShader = `
       // #include "./includes/uniforms/cameraUniforms"
-      // #include "./includes/uniforms/sceneUniforms"
-      // #include "./includes/uniforms/lightUniforms"
+      // #include "./includes/uniforms/sceneLightUniforms"
       // #include "./includes/uniforms/entityUniforms"
       
       ${shader}

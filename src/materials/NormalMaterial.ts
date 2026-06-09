@@ -12,7 +12,7 @@ export type NormalMaterialOptions = {
 function NormalMaterial(context: TonyModuleContext) {
   const { renderer, createUniformBuffer, registerMaterialLayoutDescriptor } = context;
 
-  const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
+  const { createBaseMaterial } = BaseMaterialFactory(renderer);
 
   const normalMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
     label: 'NormalMaterial Bind Group Layout',
@@ -35,6 +35,9 @@ function NormalMaterial(context: TonyModuleContext) {
     if (options.normalTexture) {
       materialFlags |= MaterialFlags.Normal;
     }
+    const materialUniformsBuffer = createUniformBuffer({
+      materialFlags: { type: 'u32', value: materialFlags },
+    });
 
     const self = createBaseMaterial<NormalMaterialType>({
       type: 'normal',
@@ -42,10 +45,9 @@ function NormalMaterial(context: TonyModuleContext) {
       transparent: false,
       doubleSided: options.doubleSided ?? false,
       depthWrite: options.depthWrite ?? true,
-      uniforms: {
-        materialFlags: { type: 'u32', value: materialFlags },
-      },
-      buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
+      buffers: [materialUniformsBuffer],
+      buildBindGroupEntries(materialBuffers: UniformBuffer[]) {
+        const materialUniformsBuffer = materialBuffers[0];
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },

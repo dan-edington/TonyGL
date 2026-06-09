@@ -1,4 +1,4 @@
-import { CreateUniformBufferFunction, UniformBuffer, UniformObject } from '../core/core.types';
+import { UniformBuffer } from '../core/core.types';
 import type { Renderer } from '../renderer/renderer.types';
 import type { MaterialType, BaseMaterial } from './materials.types';
 
@@ -12,18 +12,19 @@ export const enum MaterialFlags {
 export type BaseMaterialOptions = {
   type: MaterialType;
   shader: string;
-  uniforms?: UniformObject;
+  buffers?: UniformBuffer[];
+  bindGroupLayout?: GPUBindGroupLayout;
   transparent?: boolean;
   doubleSided?: boolean;
   depthWrite?: boolean;
-  buildBindGroupEntries: (materialUniformsBuffer: UniformBuffer | null) => GPUBindGroupEntry[];
+  buildBindGroupEntries: (materialBuffers: UniformBuffer[]) => GPUBindGroupEntry[];
 };
 
-export function BaseMaterialFactory(renderer: Renderer, createUniformBuffer: CreateUniformBufferFunction) {
+export function BaseMaterialFactory(renderer: Renderer) {
   function createBaseMaterial<T extends BaseMaterial = BaseMaterial>(options: BaseMaterialOptions): T {
     const id = crypto.randomUUID();
     const type = options.type;
-    const materialUniformsBuffer = options.uniforms ? createUniformBuffer(options.uniforms) : null;
+    let materialBuffers = options.buffers ?? [];
     const shaderIdentifier =
       type === 'custom' ? renderer.shaderLibrary.buildCustomShader({ shader: options.shader, id }) : options.shader;
 
@@ -32,28 +33,31 @@ export function BaseMaterialFactory(renderer: Renderer, createUniformBuffer: Cre
       throw new Error('Could not find shader code for material.');
     }
 
-    const materialBindGroupLayout = renderer.bindGroupLayouts.materialBindGroupLayouts?.get(type);
+    const materialBindGroupLayout =
+      options.bindGroupLayout ?? renderer.bindGroupLayouts.materialBindGroupLayouts?.get(type) ?? null;
     if (!materialBindGroupLayout) {
       throw new Error(`Material bind group layout missing for type: ${type}`);
     }
 
-    const entries = options.buildBindGroupEntries(materialUniformsBuffer);
+    const createMaterialBindGroup = (buffers: UniformBuffer[]) => {
+      const entries = options.buildBindGroupEntries(buffers);
 
-    const materialUniformsBindGroup =
-      entries.length > 0
-        ? renderer.device.createBindGroup({
-            layout: materialBindGroupLayout,
-            entries,
-          })
-        : null;
+      if (entries.length === 0) return null;
+
+      return renderer.device.createBindGroup({
+        layout: materialBindGroupLayout,
+        entries,
+      });
+    };
 
     const self: BaseMaterial = {
       id,
       type,
       shader: shaderIdentifier,
       shaderModule: cachedShader.shaderModule,
-      materialUniformsBuffer,
-      materialUniformsBindGroup,
+      materialBindGroupLayout,
+      materialUniformsBuffer: materialBuffers[0] ?? null,
+      materialUniformsBindGroup: createMaterialBindGroup(materialBuffers),
       transparent: options.transparent ?? false,
       doubleSided: options.doubleSided ?? false,
       depthWrite: options.depthWrite ?? true,
@@ -61,11 +65,20 @@ export function BaseMaterialFactory(renderer: Renderer, createUniformBuffer: Cre
       updateUniforms(updatedUniforms) {
         self.materialUniformsBuffer?.updateUniforms(updatedUniforms);
       },
+      rebindBuffers(updatedBuffers) {
+        materialBuffers = updatedBuffers;
+        self.materialUniformsBuffer = materialBuffers[0] ?? null;
+        self.materialUniformsBindGroup = createMaterialBindGroup(materialBuffers);
+      },
       writeBuffers() {
-        self.materialUniformsBuffer?.writeUpdatedBufferData();
+        for (const materialBuffer of materialBuffers) {
+          materialBuffer.writeUpdatedBufferData();
+        }
       },
       destroy() {
-        self.materialUniformsBuffer?.destroy();
+        for (const materialBuffer of materialBuffers) {
+          materialBuffer.destroy();
+        }
         self.materialUniformsBuffer = null;
         self.materialUniformsBindGroup = null;
       },

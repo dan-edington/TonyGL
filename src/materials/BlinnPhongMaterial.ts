@@ -21,7 +21,7 @@ export type BlinnPhongMaterialOptions = {
 function BlinnPhongMaterial(context: TonyModuleContext) {
   const { renderer, createUniformBuffer, registerMaterialLayoutDescriptor } = context;
 
-  const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
+  const { createBaseMaterial } = BaseMaterialFactory(renderer);
 
   const blinnPhongMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
     label: 'BlinnPhongMaterial Bind Group Layout',
@@ -62,6 +62,16 @@ function BlinnPhongMaterial(context: TonyModuleContext) {
     if (!sampler) {
       throw new Error('BlinnPhong material sampler not found.');
     }
+    const materialUniformsBuffer = createUniformBuffer({
+      materialFlags: { type: 'u32', value: materialFlags },
+      color: { type: 'vec4<f32>', value: colorToLinear(color) },
+      textureRepeatAlbedo: { type: 'vec2<f32>', value: albedoTexture.repeat },
+      textureRepeatAlpha: { type: 'vec2<f32>', value: alphaTexture.repeat },
+      textureRepeatNormal: { type: 'vec2<f32>', value: normalTexture.repeat },
+      shininess: { type: 'f32', value: shininess },
+      specularColor: { type: 'vec3<f32>', value: colorToLinear(specularColor) },
+      specularStrength: { type: 'f32', value: specularStrength },
+    });
 
     const self = createBaseMaterial<BlinnPhongMaterialType>({
       type: 'blinnphong',
@@ -69,17 +79,9 @@ function BlinnPhongMaterial(context: TonyModuleContext) {
       transparent: options.transparent ?? false,
       doubleSided: options.doubleSided ?? false,
       depthWrite: options.depthWrite ?? true,
-      uniforms: {
-        materialFlags: { type: 'u32', value: materialFlags },
-        color: { type: 'vec4<f32>', value: colorToLinear(color) },
-        textureRepeatAlbedo: { type: 'vec2<f32>', value: albedoTexture.repeat },
-        textureRepeatAlpha: { type: 'vec2<f32>', value: alphaTexture.repeat },
-        textureRepeatNormal: { type: 'vec2<f32>', value: normalTexture.repeat },
-        shininess: { type: 'f32', value: shininess },
-        specularColor: { type: 'vec3<f32>', value: colorToLinear(specularColor) },
-        specularStrength: { type: 'f32', value: specularStrength },
-      },
-      buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
+      buffers: [materialUniformsBuffer],
+      buildBindGroupEntries(materialBuffers: UniformBuffer[]) {
+        const materialUniformsBuffer = materialBuffers[0];
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },

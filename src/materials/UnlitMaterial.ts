@@ -16,7 +16,7 @@ export type UnlitMaterialOptions = {
 function UnlitMaterial(context: TonyModuleContext) {
   const { renderer, createUniformBuffer, registerMaterialLayoutDescriptor } = context;
 
-  const { createBaseMaterial } = BaseMaterialFactory(renderer, createUniformBuffer);
+  const { createBaseMaterial } = BaseMaterialFactory(renderer);
 
   const unlitMaterialLayoutDescriptor: GPUBindGroupLayoutDescriptor = {
     label: 'UnlitMaterial Bind Group Layout',
@@ -46,6 +46,12 @@ function UnlitMaterial(context: TonyModuleContext) {
     const albedoTexture = options.albedoTexture ?? renderer.textureLibrary.getFallback('white');
     const sampler = renderer.samplerLibrary.getSampler('linearRepeat');
     if (!sampler) throw new Error('Unlit material sampler not found.');
+    const materialUniformsBuffer = createUniformBuffer({
+      materialFlags: { type: 'u32', value: materialFlags },
+      color: { type: 'vec4<f32>', value: colorToLinear(color) },
+      textureRepeatAlbedo: { type: 'vec2<f32>', value: albedoTexture.repeat },
+      textureRepeatAlpha: { type: 'vec2<f32>', value: alphaTexture.repeat },
+    });
 
     const self = createBaseMaterial<UnlitMaterialType>({
       type: 'unlit',
@@ -53,13 +59,9 @@ function UnlitMaterial(context: TonyModuleContext) {
       transparent: options.transparent ?? false,
       doubleSided: options.doubleSided ?? false,
       depthWrite: options.depthWrite ?? true,
-      uniforms: {
-        materialFlags: { type: 'u32', value: materialFlags },
-        color: { type: 'vec4<f32>', value: colorToLinear(color) },
-        textureRepeatAlbedo: { type: 'vec2<f32>', value: albedoTexture.repeat },
-        textureRepeatAlpha: { type: 'vec2<f32>', value: alphaTexture.repeat },
-      },
-      buildBindGroupEntries(materialUniformsBuffer: UniformBuffer | null) {
+      buffers: [materialUniformsBuffer],
+      buildBindGroupEntries(materialBuffers: UniformBuffer[]) {
+        const materialUniformsBuffer = materialBuffers[0];
         if (!materialUniformsBuffer?.buffer) return [];
         return [
           { binding: 0, resource: { buffer: materialUniformsBuffer.buffer } },

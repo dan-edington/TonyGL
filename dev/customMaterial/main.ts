@@ -37,13 +37,15 @@ if (container) {
     uvs: spherePrimitive.uvs,
   });
 
+  const u = tony.createUniformBuffer({
+    color: { type: 'vec4f', value: new Float32Array([1, 0, 1, 1]) },
+    time: { type: 'f32', value: 0 },
+  });
+
   const customMaterial = tony.createCustomMaterial({
     shader: mycustomshader,
     transparent: true,
-    uniforms: {
-      color: { type: 'vec4f', value: new Float32Array([1, 0, 1, 1]) },
-      time: { type: 'f32', value: 0 },
-    },
+    buffers: [u],
   });
 
   const sphereMesh = tony.createMesh(sphereGeometry, customMaterial);
