@@ -4,7 +4,6 @@ import { Pane } from 'tweakpane';
 import Stats from 'stats.js';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import { PerspectiveCamera } from '../../src/camera/PerspectiveCamera';
-import { OrbitControls } from '../../src/camera/OrbitControls';
 import { Geometry } from '../../src/geometry/Geometry';
 import { Scene } from '../../src/sceneObjects/Scene';
 import { Mesh } from '../../src/sceneObjects/Mesh';
@@ -17,8 +16,10 @@ import { CustomMaterial } from '../../src/materials/CustomMaterial';
 import { ComputeTask } from '../../src/compute/ComputeTask';
 import type { ComputePass } from '../../src/renderer/renderer.types';
 
-const gridSize = 500;
-const timeStepMs = 16;
+const params = {
+  gridSize: 100,
+  timeStepMs: 64,
+};
 
 const container = document.getElementById('app');
 const stats = new Stats();
@@ -31,7 +32,7 @@ if (container) {
   const tony = await TonyGL({
     containerElement: container,
     alpha: true,
-    modules: [PerspectiveCamera, OrbitControls, Geometry, Scene, Mesh, PointLight, CustomMaterial, ComputeTask],
+    modules: [PerspectiveCamera, Geometry, Scene, Mesh, PointLight, CustomMaterial, ComputeTask],
   });
 
   const scene = tony.createScene();
@@ -42,23 +43,242 @@ if (container) {
     fov: (60 * Math.PI) / 180,
     aspect: container.clientWidth / container.clientHeight,
   });
-  camera.setPosition([0, 0, 2]);
-  tony.createOrbitControls({ camera, domElement: tony.renderer.canvasElement });
 
-  const grid = createGrid(gridSize, gridSize);
+  const grid = createGrid(params.gridSize, params.gridSize);
 
-  const cx = Math.floor(gridSize / 2);
-  const cy = Math.floor(gridSize / 2);
-  grid.setGridPosition(cx, cy - 1, 1);
-  grid.setGridPosition(cx + 1, cy - 1, 1);
-  grid.setGridPosition(cx - 1, cy, 1);
-  grid.setGridPosition(cx, cy, 1);
-  grid.setGridPosition(cx, cy + 1, 1);
+  const cx = Math.floor(params.gridSize / 2);
+  const cy = Math.floor(params.gridSize / 2);
+
+  type GridPattern = [number, number][];
+
+  function setGridPattern(pattern: GridPattern) {
+    grid.gridArray.fill(0);
+
+    for (let i = 0; i < pattern.length; i++) {
+      const x = pattern[i][0];
+      const y = pattern[i][1];
+      grid.setGridPosition(x, y, 1);
+    }
+  }
+
+  const rPentomino: GridPattern = [
+    [cx, cy - 1],
+    [cx + 1, cy - 1],
+    [cx - 1, cy],
+    [cx, cy],
+    [cx, cy + 1],
+  ];
+
+  const blinker: GridPattern = [
+    [cx - 1, cy],
+    [cx, cy],
+    [cx + 1, cy],
+  ];
+
+  const glider: GridPattern = [
+    [cx, cy - 1],
+    [cx + 1, cy],
+    [cx - 1, cy + 1],
+    [cx, cy + 1],
+    [cx + 1, cy + 1],
+  ];
+
+  const lightweightSpaceship: GridPattern = [
+    [cx - 1, cy - 1],
+    [cx + 2, cy - 1],
+    [cx - 2, cy],
+    [cx - 2, cy + 1],
+    [cx + 2, cy + 1],
+    [cx - 2, cy + 2],
+    [cx - 1, cy + 2],
+    [cx, cy + 2],
+    [cx + 1, cy + 2],
+  ];
+
+  const diehard: GridPattern = [
+    [cx + 2, cy - 1],
+    [cx - 4, cy],
+    [cx - 3, cy],
+    [cx - 3, cy + 1],
+    [cx + 1, cy + 1],
+    [cx + 2, cy + 1],
+    [cx + 3, cy + 1],
+  ];
+
+  const acorn: GridPattern = [
+    [cx - 2, cy - 1],
+    [cx, cy],
+    [cx - 3, cy + 1],
+    [cx - 2, cy + 1],
+    [cx + 1, cy + 1],
+    [cx + 2, cy + 1],
+    [cx + 3, cy + 1],
+  ];
+
+  const bHeptomino: GridPattern = [
+    [cx - 1, cy - 1],
+    [cx, cy - 1],
+    [cx, cy],
+    [cx + 1, cy],
+    [cx - 1, cy + 1],
+    [cx, cy + 1],
+    [cx - 1, cy + 2],
+  ];
+
+  const piHeptomino: GridPattern = [
+    [cx - 1, cy - 1],
+    [cx, cy - 1],
+    [cx + 1, cy - 1],
+    [cx - 1, cy],
+    [cx + 1, cy],
+    [cx - 1, cy + 1],
+    [cx + 1, cy + 1],
+  ];
+
+  const rabbit: GridPattern = [
+    [cx - 3, cy - 1],
+    [cx + 1, cy - 1],
+    [cx + 2, cy - 1],
+    [cx + 3, cy - 1],
+    [cx - 3, cy],
+    [cx - 2, cy],
+    [cx - 1, cy],
+    [cx + 2, cy],
+    [cx - 2, cy + 1],
+  ];
+
+  const pulsar: GridPattern = [
+    [cx - 4, cy - 6],
+    [cx - 3, cy - 6],
+    [cx - 2, cy - 6],
+    [cx + 2, cy - 6],
+    [cx + 3, cy - 6],
+    [cx + 4, cy - 6],
+
+    [cx - 6, cy - 4],
+    [cx - 1, cy - 4],
+    [cx + 1, cy - 4],
+    [cx + 6, cy - 4],
+    [cx - 6, cy - 3],
+    [cx - 1, cy - 3],
+    [cx + 1, cy - 3],
+    [cx + 6, cy - 3],
+    [cx - 6, cy - 2],
+    [cx - 1, cy - 2],
+    [cx + 1, cy - 2],
+    [cx + 6, cy - 2],
+
+    [cx - 4, cy - 1],
+    [cx - 3, cy - 1],
+    [cx - 2, cy - 1],
+    [cx + 2, cy - 1],
+    [cx + 3, cy - 1],
+    [cx + 4, cy - 1],
+
+    [cx - 4, cy + 1],
+    [cx - 3, cy + 1],
+    [cx - 2, cy + 1],
+    [cx + 2, cy + 1],
+    [cx + 3, cy + 1],
+    [cx + 4, cy + 1],
+
+    [cx - 6, cy + 2],
+    [cx - 1, cy + 2],
+    [cx + 1, cy + 2],
+    [cx + 6, cy + 2],
+    [cx - 6, cy + 3],
+    [cx - 1, cy + 3],
+    [cx + 1, cy + 3],
+    [cx + 6, cy + 3],
+    [cx - 6, cy + 4],
+    [cx - 1, cy + 4],
+    [cx + 1, cy + 4],
+    [cx + 6, cy + 4],
+
+    [cx - 4, cy + 6],
+    [cx - 3, cy + 6],
+    [cx - 2, cy + 6],
+    [cx + 2, cy + 6],
+    [cx + 3, cy + 6],
+    [cx + 4, cy + 6],
+  ];
+
+  const gosperGliderGun: GridPattern = [
+    [cx + 6, cy - 4],
+    [cx + 4, cy - 3],
+    [cx + 6, cy - 3],
+
+    [cx - 6, cy - 2],
+    [cx - 5, cy - 2],
+    [cx + 2, cy - 2],
+    [cx + 3, cy - 2],
+    [cx + 16, cy - 2],
+    [cx + 17, cy - 2],
+
+    [cx - 7, cy - 1],
+    [cx - 3, cy - 1],
+    [cx + 2, cy - 1],
+    [cx + 3, cy - 1],
+    [cx + 16, cy - 1],
+    [cx + 17, cy - 1],
+
+    [cx - 18, cy],
+    [cx - 17, cy],
+    [cx - 8, cy],
+    [cx - 2, cy],
+    [cx + 2, cy],
+    [cx + 3, cy],
+
+    [cx - 18, cy + 1],
+    [cx - 17, cy + 1],
+    [cx - 8, cy + 1],
+    [cx - 4, cy + 1],
+    [cx - 2, cy + 1],
+    [cx - 1, cy + 1],
+    [cx + 4, cy + 1],
+    [cx + 6, cy + 1],
+
+    [cx - 8, cy + 2],
+    [cx - 2, cy + 2],
+    [cx + 6, cy + 2],
+
+    [cx - 7, cy + 3],
+    [cx - 3, cy + 3],
+
+    [cx - 6, cy + 4],
+    [cx - 5, cy + 4],
+  ];
+
+  const toad: GridPattern = [
+    [cx - 1, cy],
+    [cx, cy],
+    [cx + 1, cy],
+    [cx - 2, cy + 1],
+    [cx - 1, cy + 1],
+    [cx, cy + 1],
+  ];
+
+  const allConfigs = new Map<string, GridPattern>([
+    ['rPentomino', rPentomino],
+    ['blinker', blinker],
+    ['glider', glider],
+    ['lightweightSpaceship', lightweightSpaceship],
+    ['diehard', diehard],
+    ['acorn', acorn],
+    ['bHeptomino', bHeptomino],
+    ['piHeptomino', piHeptomino],
+    ['rabbit', rabbit],
+    ['pulsar', pulsar],
+    ['gosperGliderGun', gosperGliderGun],
+    ['toad', toad],
+  ]);
+
+  setGridPattern(piHeptomino);
 
   const gridBufferA = tony.createUniformBuffer(
     {
-      gridSize: { type: 'u32', value: gridSize },
-      grid: { type: `array<u32, ${gridSize * gridSize}>`, value: grid.gridArray },
+      gridSize: { type: 'u32', value: params.gridSize },
+      grid: { type: `array<u32, ${params.gridSize * params.gridSize}>`, value: grid.gridArray },
     },
     {
       addressSpace: 'storage',
@@ -67,8 +287,8 @@ if (container) {
 
   const gridBufferB = tony.createUniformBuffer(
     {
-      gridSize: { type: 'u32', value: gridSize },
-      grid: { type: `array<u32, ${gridSize * gridSize}>`, value: grid.gridArray },
+      gridSize: { type: 'u32', value: params.gridSize },
+      grid: { type: `array<u32, ${params.gridSize * params.gridSize}>`, value: grid.gridArray },
     },
     {
       addressSpace: 'storage',
@@ -83,7 +303,7 @@ if (container) {
     shaderCode: gameOfLifeShaderCompute,
     buffers: [readGridBuffer, writeGridBuffer],
     workgroupSize: [8, 8, 1],
-    dispatchSize: [gridSize, gridSize, 1],
+    dispatchSize: [params.gridSize, params.gridSize, 1],
     enabled: true,
   });
 
@@ -93,9 +313,11 @@ if (container) {
     computePass.addTask(gameOfLifeComputeTask);
   }
 
+  const planeSize = 2.5;
+
   const { positions, uvs, normals, cells } = plane({
-    sx: 2.5,
-    sy: 2.5,
+    sx: planeSize,
+    sy: planeSize,
     nx: 1,
     ny: 1,
     direction: 'z',
@@ -109,6 +331,10 @@ if (container) {
     indices: new Uint16Array(cells),
   });
 
+  // Adjust camera so plane takes up full viewport
+  const cameraFitDistanceZ = Math.tan(camera.fov) * (planeSize / 2);
+  camera.setPosition([0, 0, cameraFitDistanceZ]);
+
   const gameOfLifeMaterial = tony.createCustomMaterial({
     shader: gameOfLifeShader,
     buffers: [writeGridBuffer],
@@ -118,31 +344,82 @@ if (container) {
 
   scene.add(gameOfLifeMesh);
 
-  let t = 0;
+  let currentFrameTime = 0;
 
-  (function render() {
+  function render() {
     stats.begin();
 
-    t += tony.renderer.timers.deltaTime;
+    currentFrameTime += tony.renderer.timers.deltaTime;
 
     tony.render(scene, camera);
 
-    if (t >= timeStepMs) {
+    if (currentFrameTime >= params.timeStepMs) {
       // flip buffers
       [readGridBuffer, writeGridBuffer] = [writeGridBuffer, readGridBuffer];
 
       gameOfLifeComputeTask.rebindBuffers([readGridBuffer, writeGridBuffer]);
       gameOfLifeMaterial.rebindBuffers([writeGridBuffer]);
 
-      t = 0;
+      currentFrameTime = 0;
     }
 
     stats.end();
 
     requestAnimationFrame(render);
-  })();
+  }
+
+  render();
 
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
   });
+
+  pane
+    .addBinding(params, 'timeStepMs', {
+      min: 0,
+      max: 1000,
+      step: 1,
+    })
+    .on('change', () => {
+      currentFrameTime = 0;
+    });
+
+  pane
+    .addBlade({
+      view: 'list',
+      label: 'configuration',
+      options: [
+        { text: 'r-pentomino', value: 'rPentomino' },
+        { text: 'blinker', value: 'blinker' },
+        { text: 'toad', value: 'toad' },
+        { text: 'glider', value: 'glider' },
+        { text: 'lightweightSpaceship', value: 'lightweightSpaceship' },
+        { text: 'diehard', value: 'diehard' },
+        { text: 'acorn', value: 'acorn' },
+        { text: 'bHeptomino', value: 'bHeptomino' },
+        { text: 'piHeptomino', value: 'piHeptomino' },
+        { text: 'rabbit', value: 'rabbit' },
+        { text: 'pulsar', value: 'pulsar' },
+        { text: 'gosperGliderGun', value: 'gosperGliderGun' },
+      ],
+      value: 'rPentomino',
+    })
+    .on('change', (evt: any) => {
+      setGridPattern(allConfigs.get(evt.value)!);
+
+      readGridBuffer.updateUniforms({
+        grid: grid.gridArray,
+      });
+      readGridBuffer.writeUpdatedBufferData();
+
+      writeGridBuffer.updateUniforms({
+        grid: grid.gridArray,
+      });
+      writeGridBuffer.writeUpdatedBufferData();
+
+      gameOfLifeComputeTask.rebindBuffers([readGridBuffer, writeGridBuffer]);
+      gameOfLifeMaterial.rebindBuffers([writeGridBuffer]);
+
+      currentFrameTime = 0;
+    });
 }
