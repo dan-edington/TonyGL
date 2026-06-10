@@ -20,6 +20,7 @@ function createComputePass() {
       computeTasksOrder.forEach((computeTaskName) => {
         const computeTask = computeTasks.get(computeTaskName);
         if (computeTask && computeTask.enabled) {
+          computeTask.writeBuffers();
           computeTask.compute(pass);
         }
       });

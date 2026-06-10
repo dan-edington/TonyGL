@@ -19,13 +19,15 @@ function ComputeTask(context: TonyModuleContext) {
     const self = {
       name,
       enabled,
+      writeBuffers,
       compute,
       rebindBuffers,
     };
 
     const computeShaderModule = createShaderModule(name, shaderCode);
     const computePipeline = createComputePipeline(name, computeShaderModule, shaderEntryPoint);
-    let computeBindGroup = createComputeBindGroup(name, buffers, computePipeline);
+    let computeBuffers = buffers;
+    let computeBindGroup = createComputeBindGroup(name, computeBuffers, computePipeline);
 
     if (workgroupSize.length < 3) workgroupSize.push(...Array(3 - workgroupSize.length).fill(1));
     if (dispatchSize.length < 3) dispatchSize.push(...Array(3 - dispatchSize.length).fill(1));
@@ -40,7 +42,14 @@ function ComputeTask(context: TonyModuleContext) {
       );
     }
 
+    function writeBuffers() {
+      for (const computeBuffer of computeBuffers) {
+        computeBuffer.writeUpdatedBufferData();
+      }
+    }
+
     function rebindBuffers(nextBuffers: UniformBuffer[]) {
+      computeBuffers = nextBuffers;
       computeBindGroup = createComputeBindGroup(name, nextBuffers, computePipeline);
     }
 

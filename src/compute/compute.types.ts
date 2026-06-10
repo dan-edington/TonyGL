@@ -3,6 +3,7 @@ import { UniformBuffer } from '../core/core.types';
 export type ComputeTask = {
   name: string;
   enabled: boolean;
+  writeBuffers(): void;
   compute(pass: GPUComputePassEncoder): void;
   rebindBuffers(buffers: UniformBuffer[]): void;
 };
