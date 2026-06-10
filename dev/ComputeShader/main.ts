@@ -19,6 +19,9 @@ import type { ComputePass } from '../../src/renderer/renderer.types';
 const params = {
   gridSize: 100,
   timeStepMs: 64,
+  gridColor: { r: 1, g: 0, b: 0, a: 1 },
+  cellColor: { r: 0, g: 0, b: 0, a: 1 },
+  cellRadius: 0.5,
 };
 
 const container = document.getElementById('app');
@@ -295,6 +298,18 @@ if (container) {
     },
   );
 
+  const gridStyleUniform = tony.createUniformBuffer({
+    gridColor: {
+      type: 'vec4f',
+      value: new Float32Array([params.gridColor.r, params.gridColor.g, params.gridColor.b, params.gridColor.a]),
+    },
+    cellColor: {
+      type: 'vec4f',
+      value: new Float32Array([params.cellColor.r, params.cellColor.g, params.cellColor.b, params.cellColor.a]),
+    },
+    cellRadius: { type: 'f32', value: params.cellRadius },
+  });
+
   let readGridBuffer = gridBufferA;
   let writeGridBuffer = gridBufferB;
 
@@ -337,7 +352,7 @@ if (container) {
 
   const gameOfLifeMaterial = tony.createCustomMaterial({
     shader: gameOfLifeShader,
-    buffers: [writeGridBuffer],
+    buffers: [writeGridBuffer, gridStyleUniform],
   });
 
   const gameOfLifeMesh = tony.createMesh(planeGeometry, gameOfLifeMaterial);
@@ -358,7 +373,7 @@ if (container) {
       [readGridBuffer, writeGridBuffer] = [writeGridBuffer, readGridBuffer];
 
       gameOfLifeComputeTask.rebindBuffers([readGridBuffer, writeGridBuffer]);
-      gameOfLifeMaterial.rebindBuffers([writeGridBuffer]);
+      gameOfLifeMaterial.rebindBuffers([writeGridBuffer, gridStyleUniform]);
 
       currentFrameTime = 0;
     }
@@ -382,6 +397,33 @@ if (container) {
     })
     .on('change', () => {
       currentFrameTime = 0;
+    });
+
+  pane.addBinding(params, 'cellColor', { color: { type: 'float' } }).on('change', () => {
+    const value = params.cellColor;
+    gridStyleUniform.updateUniforms({
+      cellColor: new Float32Array([value.r, value.g, value.b, value.a]),
+    });
+  });
+
+  pane.addBinding(params, 'gridColor', { color: { type: 'float' } }).on('change', () => {
+    const value = params.gridColor;
+    gridStyleUniform.updateUniforms({
+      gridColor: new Float32Array([value.r, value.g, value.b, value.a]),
+    });
+  });
+
+  pane
+    .addBinding(params, 'cellRadius', {
+      min: 0,
+      max: 1,
+      step: 0.01,
+    })
+    .on('change', () => {
+      const value = params.cellRadius;
+      gridStyleUniform.updateUniforms({
+        cellRadius: value,
+      });
     });
 
   pane
@@ -410,15 +452,13 @@ if (container) {
       readGridBuffer.updateUniforms({
         grid: grid.gridArray,
       });
-      readGridBuffer.writeUpdatedBufferData();
 
       writeGridBuffer.updateUniforms({
         grid: grid.gridArray,
       });
-      writeGridBuffer.writeUpdatedBufferData();
 
       gameOfLifeComputeTask.rebindBuffers([readGridBuffer, writeGridBuffer]);
-      gameOfLifeMaterial.rebindBuffers([writeGridBuffer]);
+      gameOfLifeMaterial.rebindBuffers([writeGridBuffer, gridStyleUniform]);
 
       currentFrameTime = 0;
     });

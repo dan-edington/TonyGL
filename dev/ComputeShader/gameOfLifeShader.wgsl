@@ -3,7 +3,14 @@ struct Grid {
   grid: array<u32>,
 }
 
+struct GridStyle {
+  gridColor: vec4f,
+  cellColor: vec4f,
+  cellRadius: f32,
+}
+
 @group(2) @binding(0) var<storage, read> grid: Grid;
+@group(2) @binding(1) var<uniform> gridStyle: GridStyle;
 
 struct VertexOutput {
   @builtin(position) position: vec4f,
@@ -32,12 +39,18 @@ fn fragment_shader(
 ) -> @location(0) vec4f {
   
   let flippedUv: vec2f = vec2f(in.uv.x, 1 - in.uv.y);
-  let gridSquare: vec2f = floor(flippedUv * f32(grid.gridSize)); 
-  let index = i32((gridSquare.y * f32(grid.gridSize)) + gridSquare.x);
+  let scaledUv: vec2f = flippedUv * f32(grid.gridSize);
+  let gridSquare: vec2f = floor(scaledUv);
+  let index: i32 = i32((gridSquare.y * f32(grid.gridSize)) + gridSquare.x);
 
-  if (grid.grid[index] == 1) {
-    return vec4f(0, 0, 0, 1);
+  let cellUv = abs(fract(scaledUv) - 0.5);
+  let dist = length(cellUv);
+
+  var color = gridStyle.gridColor;
+
+  if (grid.grid[index] == 1 && dist <= gridStyle.cellRadius) {
+    color = gridStyle.cellColor;
   }
 
-  return vec4f(1, 0, 0, 1);
+  return color;
 }
