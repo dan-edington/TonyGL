@@ -6,6 +6,7 @@ Currently supports:
 
 - Scene graph
 - Perspective camera
+- Orthographic camera
 - Indexed and non indexed geometry support
 - Instancing
 - Compute Tasks
