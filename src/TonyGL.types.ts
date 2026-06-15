@@ -1,14 +1,14 @@
-import { PerspectiveCamera } from './camera/camera.types';
-import {
+import type { Camera } from './camera/camera.types';
+import type {
   CreateUniformBufferFunction,
   EntityFactoryFunction,
   UniformBuffer,
   UniformBufferOptions,
   UniformObject,
 } from './core/core.types';
-import { MaterialType } from './materials/materials.types';
-import { Renderer } from './renderer/renderer.types';
-import { Scene } from './sceneObjects/sceneObjects.types';
+import type { MaterialType } from './materials/materials.types';
+import type { Renderer } from './renderer/renderer.types';
+import type { Scene } from './sceneObjects/sceneObjects.types';
 
 type UnionToIntersection<U> = (U extends unknown ? (arg: U) => void : never) extends (arg: infer I) => void ? I : never;
 
@@ -51,7 +51,7 @@ export type TonyOptions<M extends readonly TonyModuleFactory[] = readonly TonyMo
 export type Tony = {
   renderer: Renderer;
   createUniformBuffer: (uniformObject: UniformObject, options?: UniformBufferOptions) => UniformBuffer;
-  render: (scene: Scene, camera: PerspectiveCamera) => void;
+  render: (scene: Scene, camera: Camera) => void;
   destroy: () => void;
 };
 
