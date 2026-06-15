@@ -1,22 +1,25 @@
 import { mat4 } from 'wgpu-matrix';
-import type { PerspectiveCamera, PerspectiveCameraOptions } from './camera.types';
-import type { TonyModuleContext } from '../TonyGL.types';
+import type { OrthographicCamera, OrthographicCameraOptions } from './camera.types';
+import { TonyModuleContext } from '../TonyGL.types';
 
-function PerspectiveCamera(context: TonyModuleContext) {
+function OrthographicCamera(context: TonyModuleContext) {
   const { renderer, entityFactory, createUniformBuffer } = context;
 
-  function createPerspectiveCamera(options?: PerspectiveCameraOptions): PerspectiveCamera {
-    const { entity: self, subscribe } = entityFactory<PerspectiveCamera>({
+  function createOrthographicCamera(options?: OrthographicCameraOptions): OrthographicCamera {
+    const { entity: self, subscribe } = entityFactory<OrthographicCamera>({
       ...options,
-      type: 'PerspectiveCamera',
+      type: 'OrthographicCamera',
     });
 
     let near = options?.near ?? 0.1;
     let far = options?.far ?? 1000;
-    let fov = options?.fov ?? 75;
-    let aspect = options?.aspect ?? 1;
+    let top = options?.top ?? 1;
+    let right = options?.right ?? 1;
+    let bottom = options?.bottom ?? -1;
+    let left = options?.left ?? -1;
+    let aspect = renderer.canvasElement.width / renderer.canvasElement.height;
 
-    const projectionMatrix = mat4.perspective<Float32Array>(fov, aspect, near, far);
+    const projectionMatrix = mat4.ortho<Float32Array>(left * aspect, right * aspect, bottom, top, near, far);
     const viewMatrix = mat4.inverse(self.matrix);
     const viewProjectionMatrix = mat4.multiply(projectionMatrix, viewMatrix);
 
@@ -53,7 +56,8 @@ function PerspectiveCamera(context: TonyModuleContext) {
     }
 
     function updateProjectionMatrix() {
-      mat4.perspective<Float32Array>(fov, aspect, near, far, projectionMatrix);
+      const aspect = renderer.canvasElement.width / renderer.canvasElement.height;
+      mat4.ortho<Float32Array>(left * aspect, right * aspect, bottom, top, near, far, projectionMatrix);
       mat4.multiply(projectionMatrix, viewMatrix, viewProjectionMatrix);
       bufferNeedsUpdate = true;
     }
@@ -111,18 +115,6 @@ function PerspectiveCamera(context: TonyModuleContext) {
           updateProjectionMatrix();
         },
       },
-      fov: {
-        enumerable: true,
-        configurable: true,
-        get() {
-          return fov;
-        },
-        set(value: number) {
-          if (fov === value) return;
-          fov = value;
-          updateProjectionMatrix();
-        },
-      },
       aspect: {
         enumerable: true,
         configurable: true,
@@ -141,8 +133,8 @@ function PerspectiveCamera(context: TonyModuleContext) {
   }
 
   return {
-    createPerspectiveCamera,
+    createOrthographicCamera,
   };
 }
 
-export { PerspectiveCamera };
+export { OrthographicCamera };
