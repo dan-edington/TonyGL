@@ -91,6 +91,54 @@ function OrthographicCamera(context: TonyModuleContext) {
     subscribe('onTransformChanged', syncViewProjectionFromEntityMatrix);
 
     Object.defineProperties(self, {
+      left: {
+        enumerable: true,
+        configurable: true,
+        get() {
+          return left;
+        },
+        set(value: number) {
+          if (left === value) return;
+          left = value;
+          updateProjectionMatrix();
+        },
+      },
+      right: {
+        enumerable: true,
+        configurable: true,
+        get() {
+          return right;
+        },
+        set(value: number) {
+          if (right === value) return;
+          right = value;
+          updateProjectionMatrix();
+        },
+      },
+      top: {
+        enumerable: true,
+        configurable: true,
+        get() {
+          return top;
+        },
+        set(value: number) {
+          if (top === value) return;
+          top = value;
+          updateProjectionMatrix();
+        },
+      },
+      bottom: {
+        enumerable: true,
+        configurable: true,
+        get() {
+          return bottom;
+        },
+        set(value: number) {
+          if (bottom === value) return;
+          bottom = value;
+          updateProjectionMatrix();
+        },
+      },
       near: {
         enumerable: true,
         configurable: true,
