@@ -5,10 +5,14 @@ import { devFoldersPlugin } from './dev/listDirs.js';
 
 export default defineConfig((configEnv) => {
   const isDev = configEnv.command === 'serve' && !process.env.VITEST;
+  const libraryEntries = {
+    index: resolve(__dirname, 'src/index.ts'),
+    modules: resolve(__dirname, 'src/modules.ts'),
+  };
 
   return {
     root: isDev ? resolve(__dirname, 'dev') : undefined,
-    publicDir: resolve(__dirname, 'dev/public'),
+    publicDir: isDev ? resolve(__dirname, 'dev/public') : false,
     server: {
       open: 'index.html',
     },
@@ -17,6 +21,7 @@ export default defineConfig((configEnv) => {
       dts({
         entryRoot: resolve(__dirname, 'src'),
         insertTypesEntry: true,
+        exclude: ['src/tests/**', '**/*.test.ts'],
       }),
     ],
     build: {
@@ -25,13 +30,13 @@ export default defineConfig((configEnv) => {
       sourcemap: true,
       minify: 'oxc',
       lib: {
-        entry: resolve(__dirname, 'src/index.ts'),
+        entry: libraryEntries,
         name: 'TonyGL',
-        fileName: 'index',
+        fileName: (_format, entryName) => `${entryName}.js`,
         formats: ['es'],
       },
       rolldownOptions: {
-        external: [],
+        external: ['wgpu-matrix'],
         output: {
           preserveModules: true,
           preserveModulesRoot: 'src',
