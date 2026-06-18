@@ -28,6 +28,7 @@ function createUniformBufferStub(onDestroy?: () => void): UniformBuffer {
   return {
     id: crypto.randomUUID(),
     type: 'UniformBuffer',
+    addressSpace: 'uniform',
     buffer: {} as GPUBuffer,
     uniforms: {},
     bufferData: new ArrayBuffer(0),
