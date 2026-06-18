@@ -36,9 +36,7 @@ function Geometry(context: TonyModuleContext) {
     const vertices = padArrayToAlignmentBytes<Float32Array>(options.vertices, { alignmentBytes: 4 }).paddedArray;
     const vertexCount = vertices.length / 3;
 
-    let normals: Float32Array<ArrayBufferLike>,
-      uvs: Float32Array<ArrayBufferLike>,
-      tangents: Float32Array<ArrayBufferLike>;
+    let normals: Float32Array, uvs: Float32Array, tangents: Float32Array;
 
     if (options.normals) {
       normals = padArrayToAlignmentBytes<Float32Array>(options.normals, {
