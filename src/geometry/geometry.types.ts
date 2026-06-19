@@ -18,6 +18,8 @@ export type Geometry = {
   normalBuffer: GPUBuffer | null;
   tangentBuffer: GPUBuffer | null;
   uvBuffer: GPUBuffer | null;
+  boundingBox: BoundingBox;
+  boundingSphere: BoundingSphere;
   destroy: () => void;
 };
 
@@ -28,4 +30,19 @@ export type GeometryOptions = {
   normals?: Float32Array;
   uvs?: Float32Array;
   topology?: GPUPrimitiveTopology;
+};
+
+export type BoundingBox = {
+  min: Float32Array;
+  max: Float32Array;
+};
+
+export type BoundingSphere = {
+  radius: number;
+  center: Float32Array;
+};
+
+export type Bounds = {
+  boundingSphere: BoundingSphere;
+  boundingBox: BoundingBox;
 };
