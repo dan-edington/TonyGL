@@ -1,3 +1,4 @@
+import { mat4, vec3 } from 'wgpu-matrix';
 import { Mesh } from '../sceneObjects/sceneObjects.types';
 import { TonyModuleContext } from '../TonyGL.types';
 
@@ -16,7 +17,12 @@ export type RaycasterObject = {
   near: number;
   far: number;
   set: (options: Partial<RaycasterOptions>) => void;
-  intersect: (objects: Mesh | Mesh[]) => void;
+  intersect: (object: Mesh) => boolean;
+};
+
+export type Ray = {
+  direction: ArrayLike<number>;
+  origin: ArrayLike<number>;
 };
 
 function Raycaster(_context: TonyModuleContext) {
@@ -33,21 +39,35 @@ function Raycaster(_context: TonyModuleContext) {
       self.far = options.far ?? far;
     }
 
-    function testObjectAgainstBoundingSphere(object: Mesh) {
-      const { radius, center } = object.geometry.boundingSphere;
+    function rayToObjectLocal(object: Mesh): Ray {
+      const inverseMatrixWorld = mat4.inverse(object.matrixWorld);
 
-      const oc = [center[0] - self.origin[0], center[1] - self.origin[1], center[2] - self.origin[2]];
-      const t = oc[0] * self.direction[0] + oc[1] * self.direction[1] + oc[2] * self.direction[2];
+      const originLocal = vec3.transformMat4(self.origin, inverseMatrixWorld);
+
+      const worldEnd = vec3.add(self.origin, self.direction);
+
+      const localEnd = vec3.transformMat4(worldEnd, inverseMatrixWorld);
+
+      const directionLocal = vec3.normalize(vec3.sub(localEnd, originLocal));
+
+      return {
+        origin: originLocal,
+        direction: directionLocal,
+      };
+    }
+
+    function testBoundingSphere(object: Mesh, ray: Ray) {
+      const { radius, center } = object.geometry.boundingSphere;
+      const { direction, origin } = ray;
+
+      const oc = [center[0] - origin[0], center[1] - origin[1], center[2] - origin[2]];
+      const t = oc[0] * direction[0] + oc[1] * direction[1] + oc[2] * direction[2];
 
       if (t < self.near || t > self.far) {
         return false;
       }
 
-      const n = [
-        self.origin[0] + self.direction[0] * t,
-        self.origin[1] + self.direction[1] * t,
-        self.origin[2] + self.direction[2] * t,
-      ];
+      const n = [origin[0] + direction[0] * t, origin[1] + direction[1] * t, origin[2] + direction[2] * t];
 
       const dx = center[0] - n[0];
       const dy = center[1] - n[1];
@@ -63,12 +83,54 @@ function Raycaster(_context: TonyModuleContext) {
       return false;
     }
 
-    function intersect(objects: Mesh | Mesh[]) {
-      if (Array.isArray(objects)) {
-        objects.map(testObjectAgainstBoundingSphere);
-      } else {
-        testObjectAgainstBoundingSphere(objects);
+    function testAABB(object: Mesh, ray: Ray) {
+      const { min, max } = object.geometry.boundingBox;
+      const { direction, origin } = ray;
+
+      function getT(axis: 0 | 1 | 2): [number, number] | false {
+        const EPSILON = 1e-8;
+        let tMin, tMax;
+
+        if (Math.abs(direction[axis]) < EPSILON) {
+          if (origin[axis] < min[axis] || origin[axis] > max[axis]) {
+            return false;
+          }
+          tMin = -Infinity;
+          tMax = Infinity;
+        } else {
+          tMin = (min[axis] - origin[axis]) / direction[axis];
+          tMax = (max[axis] - origin[axis]) / direction[axis];
+        }
+
+        const t: [number, number] = tMin > tMax ? [tMax, tMin] : [tMin, tMax];
+
+        return t;
       }
+
+      const tX = getT(0);
+      if (!tX) return false;
+
+      const tY = getT(1);
+      if (!tY) return false;
+
+      const tZ = getT(2);
+      if (!tZ) return false;
+
+      const entry = Math.max(tX[0], tY[0], tZ[0]);
+      const exit = Math.min(tX[1], tY[1], tZ[1]);
+
+      return entry <= exit;
+    }
+
+    function intersect(object: Mesh) {
+      const localRay = rayToObjectLocal(object);
+
+      if (!testBoundingSphere(object, localRay)) return false;
+      if (!testAABB(object, localRay)) return false;
+
+      // TODO: Test Triangles (Möller–Trumbore)
+
+      return true;
     }
 
     const self: RaycasterObject = {
