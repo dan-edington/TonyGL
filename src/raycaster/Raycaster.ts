@@ -1,6 +1,5 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { Mesh } from '../sceneObjects/sceneObjects.types';
-import { TonyModuleContext } from '../TonyGL.types';
 
 export type RaycasterOptions = {
   origin: Float32Array;
@@ -25,7 +24,7 @@ export type Ray = {
   origin: ArrayLike<number>;
 };
 
-function Raycaster(_context: TonyModuleContext) {
+function Raycaster() {
   function createRaycaster(options: RaycasterOptions): RaycasterObject {
     const origin = options.origin;
     const direction = options.direction;
@@ -33,10 +32,10 @@ function Raycaster(_context: TonyModuleContext) {
     const far = options.far ?? Infinity;
 
     function set(options: Partial<RaycasterOptions>) {
-      self.origin = options.origin ?? origin;
-      self.direction = options.direction ?? direction;
-      self.near = options.near ?? near;
-      self.far = options.far ?? far;
+      self.origin = options.origin ?? self.origin;
+      self.direction = options.direction ?? self.direction;
+      self.near = options.near ?? self.near;
+      self.far = options.far ?? self.far;
     }
 
     function rayToObjectLocal(object: Mesh): Ray {
@@ -56,9 +55,9 @@ function Raycaster(_context: TonyModuleContext) {
       };
     }
 
-    function testBoundingSphere(object: Mesh, ray: Ray) {
+    function testBoundingSphere(object: Mesh, localRay: Ray) {
       const { radius, center } = object.geometry.boundingSphere;
-      const { direction, origin } = ray;
+      const { direction, origin } = localRay;
 
       const oc = [center[0] - origin[0], center[1] - origin[1], center[2] - origin[2]];
       const t = oc[0] * direction[0] + oc[1] * direction[1] + oc[2] * direction[2];
@@ -83,9 +82,9 @@ function Raycaster(_context: TonyModuleContext) {
       return false;
     }
 
-    function testAABB(object: Mesh, ray: Ray) {
+    function testAABB(object: Mesh, localRay: Ray) {
       const { min, max } = object.geometry.boundingBox;
-      const { direction, origin } = ray;
+      const { direction, origin } = localRay;
 
       function getT(axis: 0 | 1 | 2): [number, number] | false {
         const EPSILON = 1e-8;
@@ -122,13 +121,98 @@ function Raycaster(_context: TonyModuleContext) {
       return entry <= exit;
     }
 
+    function testTriangle(
+      vertices: Float32Array[],
+      triangleIndex: number,
+      localRay: Ray,
+      matrixWorld: Float32Array,
+      culled = true,
+    ) {
+      const EPSILON = 1e-8;
+
+      let U, V, T;
+
+      const edge1 = vec3.sub(vertices[1], vertices[0]);
+      const edge2 = vec3.sub(vertices[2], vertices[0]);
+      const pVec = vec3.cross(localRay.direction, edge2);
+      const determinant = vec3.dot(edge1, pVec);
+
+      if (culled) {
+        // CULLED
+        if (determinant < EPSILON) return false;
+        const tVec = vec3.sub(localRay.origin, vertices[0]);
+        U = vec3.dot(tVec, pVec);
+        if (U < 0 || U > determinant) return false;
+
+        const qVec = vec3.cross(tVec, edge1);
+        V = vec3.dot(localRay.direction, qVec);
+        if (V < 0 || U + V > determinant) return false;
+
+        T = vec3.dot(edge2, qVec);
+
+        const inverseDeterminent = 1 / determinant;
+
+        T *= inverseDeterminent;
+        U *= inverseDeterminent;
+        V *= inverseDeterminent;
+
+        if (T < self.near || T > self.far) return false;
+      } else {
+        // NON CULLED
+        if (determinant > -EPSILON && determinant < EPSILON) return false;
+
+        const inverseDeterminent = 1 / determinant;
+
+        const tVec = vec3.sub(localRay.origin, vertices[0]);
+        U = vec3.dot(tVec, pVec) * inverseDeterminent;
+        if (U < 0 || U > 1) return false;
+
+        const qVec = vec3.cross(tVec, edge1);
+        V = vec3.dot(localRay.direction, qVec) * inverseDeterminent;
+        if (V < 0 || U + V > 1) return false;
+
+        T = vec3.dot(edge2, qVec) * inverseDeterminent;
+
+        if (T < self.near || T > self.far) return false;
+      }
+
+      const pointLocal = vec3.add(localRay.origin, vec3.mulScalar(localRay.direction, T));
+      const pointWorld = vec3.transformMat4(pointLocal, matrixWorld);
+      const distanceWorld = vec3.distance(pointWorld, self.origin);
+
+      return {
+        distance: distanceWorld,
+        point: pointWorld,
+        triangleIndex,
+        uv: [U, V],
+      };
+    }
+
     function intersect(object: Mesh) {
       const localRay = rayToObjectLocal(object);
 
       if (!testBoundingSphere(object, localRay)) return false;
       if (!testAABB(object, localRay)) return false;
 
-      // TODO: Test Triangles (Möller–Trumbore)
+      if (object.geometry.isIndexed) {
+        const { vertices, indices } = object.geometry;
+
+        for (let i = 0; i < indices!.length; i += 3) {
+          const i1 = indices![i + 0] * 3;
+          const i2 = indices![i + 1] * 3;
+          const i3 = indices![i + 2] * 3;
+
+          const v1 = new Float32Array([vertices[i1 + 0], vertices[i1 + 1], vertices[i1 + 2]]);
+
+          const v2 = new Float32Array([vertices[i2 + 0], vertices[i2 + 1], vertices[i2 + 2]]);
+
+          const v3 = new Float32Array([vertices[i3 + 0], vertices[i3 + 1], vertices[i3 + 2]]);
+
+          const triangleResult = testTriangle([v1, v2, v3], i, localRay, object.matrixWorld);
+
+          if (triangleResult) console.log(triangleResult);
+        }
+      }
 
       return true;
     }
