@@ -1,28 +1,6 @@
 import { mat4, vec3 } from 'wgpu-matrix';
 import { Mesh } from '../sceneObjects/sceneObjects.types';
-
-export type RaycasterOptions = {
-  origin: Float32Array;
-  direction: Float32Array;
-  near?: number;
-  far?: number;
-};
-
-export type RaycastResult = {};
-
-export type RaycasterObject = {
-  origin: Float32Array;
-  direction: Float32Array;
-  near: number;
-  far: number;
-  set: (options: Partial<RaycasterOptions>) => void;
-  intersect: (object: Mesh) => boolean;
-};
-
-export type Ray = {
-  direction: ArrayLike<number>;
-  origin: ArrayLike<number>;
-};
+import type { Ray, RaycastResult, RaycasterObject, RaycasterOptions } from './raycaster.types';
 
 function Raycaster() {
   function createRaycaster(options: RaycasterOptions): RaycasterObject {
@@ -30,6 +8,8 @@ function Raycaster() {
     const direction = options.direction;
     const near = options.near ?? 0;
     const far = options.far ?? Infinity;
+
+    const EPSILON = 1e-8;
 
     function set(options: Partial<RaycasterOptions>) {
       self.origin = options.origin ?? self.origin;
@@ -87,7 +67,6 @@ function Raycaster() {
       const { direction, origin } = localRay;
 
       function getT(axis: 0 | 1 | 2): [number, number] | false {
-        const EPSILON = 1e-8;
         let tMin, tMax;
 
         if (Math.abs(direction[axis]) < EPSILON) {
@@ -121,26 +100,26 @@ function Raycaster() {
       return entry <= exit;
     }
 
-    function testTriangle(
-      vertices: Float32Array[],
-      triangleIndex: number,
-      localRay: Ray,
-      matrixWorld: Float32Array,
-      culled = true,
-    ) {
-      const EPSILON = 1e-8;
+    function testTriangle(options: {
+      triangleVertices: Float32Array[];
+      triangleIndex: number;
+      localRay: Ray;
+      objectMatrixWorld: Float32Array;
+      culled?: boolean;
+    }): RaycastResult | false {
+      const { triangleVertices, triangleIndex, localRay, objectMatrixWorld, culled = true } = options;
 
       let U, V, T;
 
-      const edge1 = vec3.sub(vertices[1], vertices[0]);
-      const edge2 = vec3.sub(vertices[2], vertices[0]);
+      const edge1 = vec3.sub(triangleVertices[1], triangleVertices[0]);
+      const edge2 = vec3.sub(triangleVertices[2], triangleVertices[0]);
       const pVec = vec3.cross(localRay.direction, edge2);
       const determinant = vec3.dot(edge1, pVec);
 
       if (culled) {
         // CULLED
         if (determinant < EPSILON) return false;
-        const tVec = vec3.sub(localRay.origin, vertices[0]);
+        const tVec = vec3.sub(localRay.origin, triangleVertices[0]);
         U = vec3.dot(tVec, pVec);
         if (U < 0 || U > determinant) return false;
 
@@ -163,7 +142,7 @@ function Raycaster() {
 
         const inverseDeterminent = 1 / determinant;
 
-        const tVec = vec3.sub(localRay.origin, vertices[0]);
+        const tVec = vec3.sub(localRay.origin, triangleVertices[0]);
         U = vec3.dot(tVec, pVec) * inverseDeterminent;
         if (U < 0 || U > 1) return false;
 
@@ -177,7 +156,7 @@ function Raycaster() {
       }
 
       const pointLocal = vec3.add(localRay.origin, vec3.mulScalar(localRay.direction, T));
-      const pointWorld = vec3.transformMat4(pointLocal, matrixWorld);
+      const pointWorld = vec3.transformMat4(pointLocal, objectMatrixWorld);
       const distanceWorld = vec3.distance(pointWorld, self.origin);
 
       return {
@@ -188,11 +167,13 @@ function Raycaster() {
       };
     }
 
-    function intersect(object: Mesh) {
+    function intersect(object: Mesh): RaycastResult[] | null {
       const localRay = rayToObjectLocal(object);
 
-      if (!testBoundingSphere(object, localRay)) return false;
-      if (!testAABB(object, localRay)) return false;
+      if (!testBoundingSphere(object, localRay)) return null;
+      if (!testAABB(object, localRay)) return null;
+
+      const hits: RaycastResult[] = [];
 
       if (object.geometry.isIndexed) {
         const { vertices, indices } = object.geometry;
@@ -208,13 +189,20 @@ function Raycaster() {
 
           const v3 = new Float32Array([vertices[i3 + 0], vertices[i3 + 1], vertices[i3 + 2]]);
 
-          const triangleResult = testTriangle([v1, v2, v3], i, localRay, object.matrixWorld);
+          const result = testTriangle({
+            triangleVertices: [v1, v2, v3],
+            triangleIndex: i,
+            localRay,
+            objectMatrixWorld: object.matrixWorld,
+          });
 
-          if (triangleResult) console.log(triangleResult);
+          if (result) hits.push(result);
         }
       }
 
-      return true;
+      hits.sort((a, b) => a.distance - b.distance);
+
+      return hits;
     }
 
     const self: RaycasterObject = {
