@@ -175,29 +175,37 @@ function Raycaster() {
 
       const hits: RaycastResult[] = [];
 
-      if (object.geometry.isIndexed) {
-        const { vertices, indices } = object.geometry;
+      const { vertices } = object.geometry;
+      const triangleCount = object.geometry.isIndexed ? object.geometry.indexCount / 3 : vertices.length / 9;
 
-        for (let i = 0; i < indices!.length; i += 3) {
-          const i1 = indices![i + 0] * 3;
-          const i2 = indices![i + 1] * 3;
-          const i3 = indices![i + 2] * 3;
+      for (let triangle = 0; triangle < triangleCount; triangle++) {
+        let i1: number;
+        let i2: number;
+        let i3: number;
 
-          const v1 = new Float32Array([vertices[i1 + 0], vertices[i1 + 1], vertices[i1 + 2]]);
-
-          const v2 = new Float32Array([vertices[i2 + 0], vertices[i2 + 1], vertices[i2 + 2]]);
-
-          const v3 = new Float32Array([vertices[i3 + 0], vertices[i3 + 1], vertices[i3 + 2]]);
-
-          const result = testTriangle({
-            triangleVertices: [v1, v2, v3],
-            triangleIndex: i,
-            localRay,
-            objectMatrixWorld: object.matrixWorld,
-          });
-
-          if (result) hits.push(result);
+        if (object.geometry.isIndexed) {
+          const indices = object.geometry.indices!;
+          i1 = indices[triangle * 3 + 0] * 3;
+          i2 = indices[triangle * 3 + 1] * 3;
+          i3 = indices[triangle * 3 + 2] * 3;
+        } else {
+          i1 = triangle * 9 + 0;
+          i2 = triangle * 9 + 3;
+          i3 = triangle * 9 + 6;
         }
+
+        const v1 = new Float32Array([vertices[i1 + 0], vertices[i1 + 1], vertices[i1 + 2]]);
+        const v2 = new Float32Array([vertices[i2 + 0], vertices[i2 + 1], vertices[i2 + 2]]);
+        const v3 = new Float32Array([vertices[i3 + 0], vertices[i3 + 1], vertices[i3 + 2]]);
+
+        const result = testTriangle({
+          triangleVertices: [v1, v2, v3],
+          triangleIndex: triangle * 3,
+          localRay,
+          objectMatrixWorld: object.matrixWorld,
+        });
+
+        if (result) hits.push(result);
       }
 
       hits.sort((a, b) => a.distance - b.distance);
