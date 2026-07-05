@@ -12,7 +12,37 @@ import type { Scene } from './sceneObjects/sceneObjects.types';
 
 type UnionToIntersection<U> = (U extends unknown ? (arg: U) => void : never) extends (arg: infer I) => void ? I : never;
 
-export type TonyFullOptions<M extends readonly TonyModuleFactory[] = readonly TonyModuleFactory[]> = {
+type AnyTonyModule = {
+  [k: string]: unknown;
+  __dependencies?: readonly TonyAnyModuleFactory[];
+};
+
+export type TonyAnyModuleFactory = TonyModuleFactory<any, AnyTonyModule>;
+
+type ModuleDependencies<TModule> = TModule extends {
+  __dependencies?: infer TDependencies extends readonly TonyAnyModuleFactory[];
+}
+  ? TDependencies
+  : readonly [];
+
+type Includes<TItems extends readonly unknown[], TValue> = TItems extends readonly [infer THead, ...infer TTail]
+  ? [TValue] extends [THead]
+    ? true
+    : Includes<TTail, TValue>
+  : false;
+
+type RecursiveModuleReturns<
+  TFactories extends readonly TonyAnyModuleFactory[],
+  TSeen extends readonly TonyAnyModuleFactory[] = readonly [],
+> = TFactories[number] extends infer TFactory
+  ? TFactory extends TonyAnyModuleFactory
+    ? Includes<TSeen, TFactory> extends true
+      ? never
+      : ReturnType<TFactory> | RecursiveModuleReturns<ModuleDependencies<ReturnType<TFactory>>, [...TSeen, TFactory]>
+    : never
+  : never;
+
+export type TonyFullOptions<M extends readonly TonyAnyModuleFactory[] = readonly TonyAnyModuleFactory[]> = {
   webGPUSetupOnly?: false;
   containerElement?: HTMLElement;
   dpr?: number;
@@ -33,18 +63,31 @@ export type TonySetupOnlyOptions = {
   multiSampling?: never;
 };
 
-export type TonyModuleFactory = (context: TonyModuleContext) => TonyModule;
+export type TonyModuleFactory<
+  TTony extends Tony = Tony & Record<string, any>,
+  TModule extends AnyTonyModule = AnyTonyModule,
+> = {
+  bivarianceHack(context: TonyModuleContext<TTony>): TModule;
+}['bivarianceHack'];
 
-export type TonyModule = Record<string, unknown>;
+export type TonyModuleFactoryWithDependencies<
+  TDependencies extends readonly TonyAnyModuleFactory[] = readonly TonyAnyModuleFactory[],
+> = TonyModuleFactory<Tony & ModulesToObject<TDependencies>, TonyModule<TDependencies>>;
 
-export type TonyModuleContext = {
+export type TonyModule<TDependencies extends readonly TonyAnyModuleFactory[] = readonly TonyAnyModuleFactory[]> = {
+  [k: string]: unknown;
+  __dependencies?: TDependencies;
+};
+
+export type TonyModuleContext<TTony extends Tony = Tony & Record<string, any>> = {
   renderer: Renderer;
   entityFactory: EntityFactoryFunction;
   createUniformBuffer: CreateUniformBufferFunction;
   registerMaterialLayoutDescriptor: (name: MaterialType, descriptor: GPUBindGroupLayoutDescriptor) => void;
+  tony: TTony;
 };
 
-export type TonyOptions<M extends readonly TonyModuleFactory[] = readonly TonyModuleFactory[]> =
+export type TonyOptions<M extends readonly TonyAnyModuleFactory[] = readonly TonyAnyModuleFactory[]> =
   | TonyFullOptions<M>
   | TonySetupOnlyOptions;
 
@@ -55,6 +98,10 @@ export type Tony = {
   destroy: () => void;
 };
 
-export type ModulesToObject<M extends readonly TonyModuleFactory[]> = UnionToIntersection<ReturnType<M[number]>>;
+type ModulePublicShape<T> = T extends object ? Omit<T, '__dependencies'> : T;
 
-export type TonyWithModules<M extends readonly TonyModuleFactory[]> = Tony & ModulesToObject<M>;
+export type ModulesToObject<M extends readonly TonyAnyModuleFactory[]> = [RecursiveModuleReturns<M>] extends [never]
+  ? {}
+  : UnionToIntersection<ModulePublicShape<RecursiveModuleReturns<M>>>;
+
+export type TonyWithModules<M extends readonly TonyAnyModuleFactory[]> = Tony & ModulesToObject<M>;

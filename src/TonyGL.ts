@@ -11,6 +11,8 @@ import type { Scene } from './sceneObjects/sceneObjects.types';
 import type { PerspectiveCamera } from './camera/camera.types';
 import type {
   TonyFullOptions,
+  Tony,
+  TonyModuleFactory,
   TonyModule,
   TonyModuleContext,
   TonySetupOnlyOptions,
@@ -25,12 +27,11 @@ import { createScenePass } from './renderer/passes/scenePass';
 import { createPresentPass } from './renderer/passes/presentPass';
 import { errorMessages } from './constants/errorMessages';
 import { createComputePass } from './renderer/passes/computePass';
+import { installModulesRecursively } from './installModulesRecursively';
 
 function TonyGL(options: TonySetupOnlyOptions): Promise<WebGPUBase>;
-function TonyGL<const M extends readonly ((context: TonyModuleContext) => TonyModule)[]>(
-  options: TonyFullOptions<M>,
-): Promise<TonyWithModules<M>>;
-async function TonyGL<const M extends readonly ((context: TonyModuleContext) => TonyModule)[]>(
+function TonyGL<const M extends readonly TonyModuleFactory[]>(options: TonyFullOptions<M>): Promise<TonyWithModules<M>>;
+async function TonyGL<const M extends readonly TonyModuleFactory[]>(
   options: TonySetupOnlyOptions | TonyFullOptions<M>,
 ): Promise<WebGPUBase | TonyWithModules<M>> {
   if (options.webGPUSetupOnly) {
@@ -45,6 +46,12 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
   // Setup re-usable Factories
   const createUniformBuffer = UniformBufferFactory(renderer);
   const entityFactory = EntityFactory;
+  const tony = {
+    renderer,
+    createUniformBuffer,
+    render,
+    destroy,
+  } as Tony & Record<string, any>;
 
   function render(scene: Scene, camera: PerspectiveCamera) {
     renderer.timers = frameTimers.updateFrameTimers();
@@ -75,22 +82,16 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
   }
 
   function installModules(): TonyModule[] {
+    const fullOptions = options as TonyFullOptions<M>;
     const context: TonyModuleContext = {
       renderer,
       createUniformBuffer,
       entityFactory,
       registerMaterialLayoutDescriptor,
+      tony,
     };
 
-    let installedModules: TonyModule[] = [];
-
-    if (!options.webGPUSetupOnly && options.modules) {
-      installedModules = options.modules.map((moduleFactory) => {
-        const module = moduleFactory(context);
-        return module;
-      });
-    }
-
+    const installedModules = installModulesRecursively(fullOptions.modules, context);
     postModuleInstall(installedModules);
 
     return installedModules;
@@ -151,14 +152,9 @@ async function TonyGL<const M extends readonly ((context: TonyModuleContext) => 
     renderer.rendererEventsAbortController = setupRendererEventListeners(renderer);
   }
 
-  const coreModules = {
-    renderer,
-    createUniformBuffer,
-    render,
-    destroy,
-  };
+  installModules();
 
-  const output = Object.assign(coreModules, ...installModules()) as TonyWithModules<M>;
+  const output = tony as TonyWithModules<M>;
 
   return output;
 }
