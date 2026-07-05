@@ -1,6 +1,14 @@
 import { mat4, vec3 } from 'wgpu-matrix';
-import { Mesh } from '../sceneObjects/sceneObjects.types';
-import type { Ray, RaycastResult, RaycasterObject, RaycasterOptions } from './raycaster.types';
+import type { Entity } from '../core/core.types';
+import type { Geometry } from '../geometry/geometry.types';
+import type {
+  Ray,
+  RaycastOptions,
+  RaycastResult,
+  RaycastTarget,
+  RaycasterObject,
+  RaycasterOptions,
+} from './raycaster.types';
 
 function Raycaster() {
   function createRaycaster(options: RaycasterOptions): RaycasterObject {
@@ -18,7 +26,11 @@ function Raycaster() {
       self.far = options.far ?? self.far;
     }
 
-    function rayToObjectLocal(object: Mesh): Ray {
+    function isRaycastTarget(node: Entity): node is RaycastTarget & { geometry: Geometry } {
+      return typeof (node as Partial<RaycastTarget>).geometry !== 'undefined';
+    }
+
+    function rayToObjectLocal(object: RaycastTarget & { geometry: Geometry }): Ray {
       const inverseMatrixWorld = mat4.inverse(object.matrixWorld);
 
       const originLocal = vec3.transformMat4(self.origin, inverseMatrixWorld);
@@ -35,7 +47,7 @@ function Raycaster() {
       };
     }
 
-    function testBoundingSphere(object: Mesh, localRay: Ray) {
+    function testBoundingSphere(object: RaycastTarget & { geometry: Geometry }, localRay: Ray) {
       const { radius, center } = object.geometry.boundingSphere;
       const { direction, origin } = localRay;
 
@@ -62,7 +74,7 @@ function Raycaster() {
       return false;
     }
 
-    function testAABB(object: Mesh, localRay: Ray) {
+    function testAABB(object: RaycastTarget & { geometry: Geometry }, localRay: Ray) {
       const { min, max } = object.geometry.boundingBox;
       const { direction, origin } = localRay;
 
@@ -105,9 +117,10 @@ function Raycaster() {
       triangleIndex: number;
       localRay: Ray;
       objectMatrixWorld: Float32Array;
+      object: RaycastTarget & { geometry: Geometry };
       culled?: boolean;
     }): RaycastResult | false {
-      const { triangleVertices, triangleIndex, localRay, objectMatrixWorld, culled = true } = options;
+      const { triangleVertices, triangleIndex, localRay, objectMatrixWorld, object, culled = true } = options;
 
       let U, V, T;
 
@@ -164,49 +177,64 @@ function Raycaster() {
         point: pointWorld,
         triangleIndex,
         uv: [U, V],
+        object,
       };
     }
 
-    function intersect(object: Mesh): RaycastResult[] | null {
-      const localRay = rayToObjectLocal(object);
-
-      if (!testBoundingSphere(object, localRay)) return null;
-      if (!testAABB(object, localRay)) return null;
-
+    function intersect(objects: RaycastTarget | RaycastTarget[], options: RaycastOptions = {}): RaycastResult[] | null {
+      const targets = Array.isArray(objects) ? objects : [objects];
+      const recursive = options.recursive ?? true;
       const hits: RaycastResult[] = [];
 
-      const { vertices } = object.geometry;
-      const triangleCount = object.geometry.isIndexed ? object.geometry.indexCount / 3 : vertices.length / 9;
+      const traverse = (node: RaycastTarget) => {
+        if (!node.visible) return;
 
-      for (let triangle = 0; triangle < triangleCount; triangle++) {
-        let i1: number;
-        let i2: number;
-        let i3: number;
+        if (isRaycastTarget(node)) {
+          const localRay = rayToObjectLocal(node);
 
-        if (object.geometry.isIndexed) {
-          const indices = object.geometry.indices!;
-          i1 = indices[triangle * 3 + 0] * 3;
-          i2 = indices[triangle * 3 + 1] * 3;
-          i3 = indices[triangle * 3 + 2] * 3;
-        } else {
-          i1 = triangle * 9 + 0;
-          i2 = triangle * 9 + 3;
-          i3 = triangle * 9 + 6;
+          if (testBoundingSphere(node, localRay) && testAABB(node, localRay)) {
+            const { vertices } = node.geometry;
+            const triangleCount = node.geometry.isIndexed ? node.geometry.indexCount / 3 : vertices.length / 9;
+
+            for (let triangle = 0; triangle < triangleCount; triangle++) {
+              let i1: number;
+              let i2: number;
+              let i3: number;
+
+              if (node.geometry.isIndexed) {
+                const indices = node.geometry.indices!;
+                i1 = indices[triangle * 3 + 0] * 3;
+                i2 = indices[triangle * 3 + 1] * 3;
+                i3 = indices[triangle * 3 + 2] * 3;
+              } else {
+                i1 = triangle * 9 + 0;
+                i2 = triangle * 9 + 3;
+                i3 = triangle * 9 + 6;
+              }
+
+              const v1 = new Float32Array([vertices[i1 + 0], vertices[i1 + 1], vertices[i1 + 2]]);
+              const v2 = new Float32Array([vertices[i2 + 0], vertices[i2 + 1], vertices[i2 + 2]]);
+              const v3 = new Float32Array([vertices[i3 + 0], vertices[i3 + 1], vertices[i3 + 2]]);
+
+              const result = testTriangle({
+                triangleVertices: [v1, v2, v3],
+                triangleIndex: triangle,
+                localRay,
+                objectMatrixWorld: node.matrixWorld,
+                object: node,
+              });
+
+              if (result) hits.push(result);
+            }
+          }
         }
 
-        const v1 = new Float32Array([vertices[i1 + 0], vertices[i1 + 1], vertices[i1 + 2]]);
-        const v2 = new Float32Array([vertices[i2 + 0], vertices[i2 + 1], vertices[i2 + 2]]);
-        const v3 = new Float32Array([vertices[i3 + 0], vertices[i3 + 1], vertices[i3 + 2]]);
+        if (recursive) {
+          node.children.forEach((child) => traverse(child as RaycastTarget));
+        }
+      };
 
-        const result = testTriangle({
-          triangleVertices: [v1, v2, v3],
-          triangleIndex: triangle * 3,
-          localRay,
-          objectMatrixWorld: object.matrixWorld,
-        });
-
-        if (result) hits.push(result);
-      }
+      targets.forEach((target) => traverse(target));
 
       hits.sort((a, b) => a.distance - b.distance);
 

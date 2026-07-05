@@ -1,4 +1,13 @@
-import { Mesh } from '../modules';
+import type { Entity } from '../core/core.types';
+import type { Geometry } from '../geometry/geometry.types';
+
+export type RaycastTarget = Entity & {
+  geometry?: Geometry;
+};
+
+export type RaycastOptions = {
+  recursive?: boolean;
+};
 
 export type RaycasterOptions = {
   origin: Float32Array;
@@ -13,7 +22,7 @@ export type RaycasterObject = {
   near: number;
   far: number;
   set: (options: Partial<RaycasterOptions>) => void;
-  intersect: (object: Mesh) => RaycastResult[] | null;
+  intersect: (objects: RaycastTarget | RaycastTarget[], options?: RaycastOptions) => RaycastResult[] | null;
 };
 
 export type Ray = {
@@ -26,4 +35,5 @@ export type RaycastResult = {
   point: Float32Array;
   triangleIndex: number;
   uv: [number, number];
+  object: RaycastTarget;
 };
