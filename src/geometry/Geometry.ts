@@ -1,5 +1,5 @@
 import { padArrayToAlignmentBytes } from '../utilities/padArrayToAlignmentBytes';
-import type { Geometry, GeometryOptions } from './geometry.types';
+import type { BoundingBox, BoundingSphere, Bounds, Geometry, GeometryOptions } from './geometry.types';
 import type { TonyModuleContext } from '../TonyGL.types';
 
 function Geometry(context: TonyModuleContext) {
@@ -70,7 +70,6 @@ function Geometry(context: TonyModuleContext) {
       size: vertices.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
-
     renderer.device.queue.writeBuffer(vertexBuffer, 0, vertices.buffer);
 
     if (isIndexed && indices) {
@@ -86,21 +85,18 @@ function Geometry(context: TonyModuleContext) {
       size: normals.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
-
     renderer.device.queue.writeBuffer(normalBuffer, 0, normals.buffer);
 
     uvBuffer = renderer.device.createBuffer({
       size: uvs.byteLength,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
-
     renderer.device.queue.writeBuffer(uvBuffer, 0, uvs.buffer);
 
     tangentBuffer = renderer.device.createBuffer({
       size: tangents ? tangents.byteLength : 0,
       usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
     });
-
     renderer.device.queue.writeBuffer(tangentBuffer, 0, tangents.buffer);
 
     function generateTangents(): Float32Array {
@@ -233,6 +229,63 @@ function Geometry(context: TonyModuleContext) {
       self.tangentBuffer = null;
     }
 
+    function computeBounds(): Bounds {
+      const min = new Float32Array([Infinity, Infinity, Infinity]);
+      const max = new Float32Array([-Infinity, -Infinity, -Infinity]);
+      const center = new Float32Array([0, 0, 0]);
+      let radiusSquared = 0;
+
+      for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i + 0];
+        const y = vertices[i + 1];
+        const z = vertices[i + 2];
+
+        min[0] = Math.min(x, min[0]);
+        min[1] = Math.min(y, min[1]);
+        min[2] = Math.min(z, min[2]);
+
+        max[0] = Math.max(x, max[0]);
+        max[1] = Math.max(y, max[1]);
+        max[2] = Math.max(z, max[2]);
+      }
+
+      center[0] = (min[0] + max[0]) * 0.5;
+      center[1] = (min[1] + max[1]) * 0.5;
+      center[2] = (min[2] + max[2]) * 0.5;
+
+      for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i + 0];
+        const y = vertices[i + 1];
+        const z = vertices[i + 2];
+
+        const distanceX = x - center[0];
+        const distanceY = y - center[1];
+        const distanceZ = z - center[2];
+
+        const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY + distanceZ * distanceZ);
+        const distanceSquared = distance * distance;
+
+        radiusSquared = Math.max(radiusSquared, distanceSquared);
+      }
+
+      const boundingBox: BoundingBox = {
+        min,
+        max,
+      };
+
+      const boundingSphere: BoundingSphere = {
+        center,
+        radius: Math.sqrt(radiusSquared),
+      };
+
+      return {
+        boundingBox,
+        boundingSphere,
+      };
+    }
+
+    const bounds = computeBounds();
+
     const self: Geometry = {
       id,
       name,
@@ -251,6 +304,8 @@ function Geometry(context: TonyModuleContext) {
       normalBuffer,
       tangentBuffer,
       uvBuffer,
+      boundingBox: bounds.boundingBox,
+      boundingSphere: bounds.boundingSphere,
       destroy,
     };
 

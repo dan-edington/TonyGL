@@ -128,6 +128,7 @@ TonyGL currently supports:
 - Multipass rendering
 - Linear to sRGB workflow
 - ACES tonemapping
+- Raycaster
 
 ## Quick Start
 
@@ -161,5 +162,4 @@ TonyGL is still very much under construction, but the rough direction is:
 - Shadows
 - MIP maps
 - Video texture support
-- Raycasting
 - Wireframe rendering

@@ -56,6 +56,7 @@ function createScene(options: SceneOptions = {}, onUniformBufferDestroy?: () => 
     entityFactory: EntityFactory,
     createUniformBuffer,
     registerMaterialLayoutDescriptor,
+    tony: {} as any,
   };
   const sceneProduct = Scene(tonyContext);
   return sceneProduct.createScene(options);

@@ -22,3 +22,5 @@ export * from './sceneObjects/Mesh';
 export * from './sceneObjects/Scene';
 
 export * from './texture/Texture';
+
+export * from './raycaster/Raycaster';
